@@ -883,6 +883,7 @@ def irrigation_recommendation(crop_type, rainfall, temperature, soil_type):
 # ============================================================
 #   WEATHER API
 # ============================================================
+@st.cache_data(ttl=86400) # Cache city coordinates for 24 hours (cities don't move)
 def get_coordinates(location: str):
     """Convert city name to lat/lon using Open-Meteo geocoding API."""
     clean_location = location.split(",")[0].strip()
@@ -897,6 +898,7 @@ def get_coordinates(location: str):
         pass
     return None, None, None
 
+@st.cache_data(ttl=1800) # Cache live weather for 30 minutes to prevent API spamming
 def get_weather(location: str):
     lat, lon, city_name = get_coordinates(location)
     if not lat or not lon:
