@@ -1,0 +1,220 @@
+{
+  "Tomato": {
+
+    "Healthy": {
+      "status": "The tomato plant is healthy and shows no visible signs of disease.",
+      "maintenance_tips": [
+        "Continue proper irrigation practices",
+        "Provide balanced fertilizers regularly",
+        "Monitor leaves regularly for unusual spots or discoloration",
+        "Ensure proper sunlight exposure",
+        "Maintain good air circulation around plants"
+      ]
+    },
+
+    "Early Blight": {
+      "causes": [
+        "Early blight occurs due to a fungal infection caused by Alternaria solani in warm and humid conditions.",
+        "The disease spreads rapidly when leaves remain wet for long periods.",
+        "Poor air circulation and unhealthy soil conditions increase the risk of infection."
+      ],
+      "prevention": [
+        "Avoid overhead watering",
+        "Use disease-free seeds",
+        "Maintain proper spacing between plants",
+        "Remove infected leaves",
+        "Practice crop rotation"
+      ],
+      "treatment": [
+        "Apply recommended fungicide",
+        "Remove infected plant parts",
+        "Improve air circulation",
+        "Use copper-based fungicide if necessary"
+      ]
+    },
+
+    "Late Blight": {
+      "causes": [
+        "Late blight develops because of the pathogen Phytophthora infestans during cool and wet weather conditions.",
+        "Excess moisture and poor ventilation help the disease spread quickly across plants.",
+        "Continuous rainfall and damp leaves increase the chances of severe infection."
+      ],
+      "prevention": [
+        "Avoid excessive irrigation",
+        "Use resistant tomato varieties",
+        "Ensure proper drainage",
+        "Monitor weather conditions regularly"
+      ],
+      "treatment": [
+        "Apply fungicide immediately",
+        "Remove infected plants",
+        "Destroy severely affected crops",
+        "Maintain dry foliage conditions"
+      ]
+    }
+  },
+
+  "Potato": {
+
+    "Healthy": {
+      "status": "The potato crop is healthy and growing under suitable conditions.",
+      "maintenance_tips": [
+        "Maintain balanced soil moisture",
+        "Use proper nutrient management",
+        "Inspect plants regularly for disease symptoms",
+        "Avoid overwatering",
+        "Keep the field free from weeds"
+      ]
+    },
+
+    "Early Blight": {
+      "causes": [
+        "Early blight in potato plants is caused by a fungal infection that thrives in warm and humid environments.",
+        "Poor soil nutrition and water stress make potato plants more vulnerable to infection.",
+        "The disease spreads faster when infected plant debris remains in the field."
+      ],
+      "prevention": [
+        "Practice crop rotation",
+        "Use certified disease-free seeds",
+        "Maintain proper field sanitation",
+        "Avoid water stress"
+      ],
+      "treatment": [
+        "Apply suitable fungicide",
+        "Remove infected leaves",
+        "Improve soil fertility",
+        "Monitor disease spread regularly"
+      ]
+    },
+
+    "Late Blight": {
+      "causes": [
+        "Late blight occurs due to infection by Phytophthora infestans in cool and wet conditions.",
+        "High humidity and poor drainage encourage rapid disease development.",
+        "Continuous wet weather helps the pathogen spread quickly across potato crops."
+      ],
+      "prevention": [
+        "Avoid overwatering",
+        "Use resistant potato varieties",
+        "Ensure proper drainage",
+        "Inspect crops frequently"
+      ],
+      "treatment": [
+        "Apply fungicide spray",
+        "Remove infected plants immediately",
+        "Destroy affected tubers",
+        "Maintain proper field hygiene"
+      ]
+    }
+  },
+
+  "Wheat": {
+
+    "Healthy": {
+      "status": "The wheat crop is healthy and currently free from visible diseases.",
+      "maintenance_tips": [
+        "Monitor crop growth regularly",
+        "Maintain proper irrigation schedule",
+        "Use balanced fertilization",
+        "Ensure proper spacing and ventilation",
+        "Inspect fields during humid weather conditions"
+      ]
+    },
+
+    "Brown Rust": {
+      "causes": [
+        "Brown rust develops because of a fungal infection caused by Puccinia triticina under warm and humid conditions.",
+        "Dense crop growth and excess moisture create a favorable environment for the disease.",
+        "The fungus spreads through airborne spores that infect wheat leaves."
+      ],
+      "prevention": [
+        "Use resistant wheat varieties",
+        "Avoid excessive nitrogen fertilizer",
+        "Ensure proper plant spacing",
+        "Monitor fields frequently"
+      ],
+      "treatment": [
+        "Apply fungicide spray",
+        "Remove infected plant debris",
+        "Practice crop rotation",
+        "Control excess moisture in fields"
+      ]
+    },
+
+    "Yellow Rust": {
+      "causes": [
+        "Yellow rust is caused by a fungal infection that spreads rapidly during cool and moist weather conditions.",
+        "High humidity and dense planting increase the chances of disease spread.",
+        "The disease spreads through fungal spores carried by wind and moisture."
+      ],
+      "prevention": [
+        "Use resistant seed varieties",
+        "Maintain proper field ventilation",
+        "Avoid excessive irrigation",
+        "Monitor crops during cool seasons"
+      ],
+      "treatment": [
+        "Apply appropriate fungicide",
+        "Remove infected leaves",
+        "Destroy severely infected plants",
+        "Monitor disease progression regularly"
+      ]
+    }
+  },
+
+  "Rice": {
+
+    "Healthy": {
+      "status": "The rice crop is healthy and growing properly without visible disease symptoms.",
+      "maintenance_tips": [
+        "Maintain proper water levels in the field",
+        "Use balanced fertilizers for healthy growth",
+        "Inspect plants regularly for early disease symptoms",
+        "Keep the field clean and free from weeds",
+        "Ensure proper drainage and airflow"
+      ]
+    },
+
+    "Brown Spot": {
+      "causes": [
+        "Brown spot disease occurs due to fungal infection in rice plants under humid and nutrient-deficient conditions.",
+        "Poor soil fertility and lack of proper nutrients increase the chances of infection.",
+        "The disease spreads rapidly during continuous wet and warm weather."
+      ],
+      "prevention": [
+        "Use disease-resistant rice varieties",
+        "Apply balanced fertilizers",
+        "Maintain proper field drainage",
+        "Use certified healthy seeds",
+        "Avoid excessive moisture in the field"
+      ],
+      "treatment": [
+        "Apply suitable fungicide",
+        "Remove infected leaves and debris",
+        "Improve soil nutrition",
+        "Monitor disease spread regularly"
+      ]
+    },
+
+    "Bacterial Leaf Blight": {
+      "causes": [
+        "Bacterial leaf blight is caused by bacterial infection that spreads quickly in warm and humid environments.",
+        "Heavy rainfall and strong winds help the bacteria spread from plant to plant.",
+        "Excess nitrogen fertilizer and standing water increase disease severity."
+      ],
+      "prevention": [
+        "Use resistant rice varieties",
+        "Avoid excessive nitrogen fertilizer",
+        "Ensure proper drainage in fields",
+        "Use disease-free seeds",
+        "Monitor crops regularly during rainy seasons"
+      ],
+      "treatment": [
+        "Remove severely infected plants",
+        "Apply recommended bactericide if necessary",
+        "Maintain balanced nutrient management",
+        "Reduce standing water in affected areas"
+      ]
+    }
+  }
+}
