@@ -19,17 +19,27 @@ import keras
 
 def sanitize_keras_config(d):
     if isinstance(d, dict):
-        # 1. Sanitize input layer parameter dictionaries
+        # 1. Sanitize input and preprocessing layer parameter dictionaries
         if "config" in d and isinstance(d["config"], dict):
             cfg = d["config"]
             if "batch_shape" in cfg:
                 cfg["batch_input_shape"] = cfg.pop("batch_shape")
             if "optional" in cfg:
                 cfg.pop("optional")
+            if "data_format" in cfg:
+                cfg.pop("data_format")
+            # Flatten Keras 3 complex DTypePolicy objects into a legacy string name
+            if "dtype" in cfg and isinstance(cfg["dtype"], dict):
+                cfg["dtype"] = cfg["dtype"].get("config", {}).get("name", "float32")
+
         if "batch_shape" in d:
             d["batch_input_shape"] = d.pop("batch_shape")
         if "optional" in d:
             d.pop("optional")
+        if "data_format" in d:
+            d.pop("data_format")
+        if "dtype" in d and isinstance(d["dtype"], dict):
+            d["dtype"] = d["dtype"].get("config", {}).get("name", "float32")
             
         # 2. Re-route functional model structural definitions smoothly
         if d.get("module") == "keras.src.models.functional" or d.get("class_name") == "Functional":
@@ -95,7 +105,7 @@ MODEL_PATHS = {
     "Rice":   os.path.join(BASE_DIR, "rice_model.h5"),
     "Tomato": os.path.join(BASE_DIR, "tomato_model.h5"),
     "Potato": os.path.join(BASE_DIR, "potato_model.h5"),
-    "Wheat":  os.path.join(BASE_DIR, "wheat_disease_finetuned_model.h5"), # Updated to .h5
+    "Wheat":  os.path.join(BASE_DIR, "wheat_disease_finetuned_model.h5"),
 }
 
 CLASS_LABELS = {
@@ -940,9 +950,9 @@ def irrigation_recommendation(crop_type, rainfall, temperature, soil_type):
     recs = []
 
     if rainfall > 120:
-        recs.append(" Heavy rainfall detected — reduce irrigation to prevent waterlogging.")
+        recs.append("Heavy rainfall detected — reduce irrigation to prevent waterlogging.")
     elif rainfall >= 60:
-        recs.append(" Sauvage/Moderate rainfall available — maintain balanced irrigation schedule.")
+        recs.append("Average/Moderate rainfall available — maintain balanced irrigation schedule.")
     else:
         recs.append("☀️ Low rainfall detected — additional irrigation is necessary.")
 
@@ -1013,30 +1023,30 @@ def weather_disease_risk(weather, crop):
     if not weather:
         return []
     temp, hum, rain = weather["temp"], weather["humidity"], weather.get("rain", 0)
-    riskes = []
+    risks = []
     if crop == "Rice":
         if hum > 80 and temp > 25:
-            riskes.append(("high", "High risk of Bacterial Leaf Blight — hot & humid conditions detected."))
+            risks.append(("high", "High risk of Bacterial Leaf Blight — hot & humid conditions detected."))
         if hum > 75:
-            riskes.append(("med",  "Moderate risk of Brown Spot — maintain good field drainage."))
+            risks.append(("med",  "Moderate risk of Brown Spot — maintain good field drainage."))
     elif crop == "Tomato":
         if temp < 20 and rain > 0:
-            riskes.append(("high", "High risk of Late Blight — cool & wet conditions detected."))
+            risks.append(("high", "High risk of Late Blight — cool & wet conditions detected."))
         if hum > 75 and temp > 22:
-            riskes.append(("med",  "Moderate risk of Early Blight — warm & humid weather."))
+            risks.append(("med",  "Moderate risk of Early Blight — warm & humid weather."))
     elif crop == "Potato":
         if temp < 20 and hum > 80:
-            riskes.append(("high", "High risk of Late Blight — cool & wet conditions."))
+            risks.append(("high", "High risk of Late Blight — cool & wet conditions."))
         if hum > 70:
-            riskes.append(("med",  "Watch for Early Blight — current humidity levels are elevated."))
+            risks.append(("med",  "Watch for Early Blight — current humidity levels are elevated."))
     elif crop == "Wheat":
         if temp > 15 and hum > 70:
-            riskes.append(("high", "High risk of Brown Rust — warm & moist conditions."))
+            risks.append(("high", "High risk of Brown Rust — warm & moist conditions."))
         if temp < 15 and hum > 80:
-            riskes.append(("high", "High risk of Yellow Rust — cool & wet conditions."))
-    if not riskes:
-        riskes.append(("low", "No significant disease risk from current weather conditions."))
-    return riskes
+            risks.append(("high", "High risk of Yellow Rust — cool & wet conditions."))
+    if not risks:
+        risks.append(("low", "No significant disease risk from current weather conditions."))
+    return risks
 
 
 # ============================================================
@@ -1705,6 +1715,7 @@ elif nav == "💧 Irrigation History":
         st.info("No irrigation recommendations yet. Go to 🌧 Irrigation Advisor to get started!")
     else:
         for log in irr_hist:
+            # Fixed the f-string syntax error here by removing the brackets around the rain emoji
             with st.expander(f"📅 {log['log_date']}  |  {log['crop_type']}  |  🌧 {log['rainfall']}mm  |  🌡 {log['temperature']}°C  |  Soil: {log['soil_type']}"):
                 for line in log["recommendation"].split("\n"):
                     if line.strip():
@@ -1807,8 +1818,8 @@ elif nav == "🔔 Notifications":
         TYPE_STYLE = {
             "critical": ("border:2px solid #C62828; border-left:8px solid #C62828; background:#FFEBEE; box-shadow:0 4px 12px rgba(198,40,40,0.15);", "#C62828", "#110A05"),
             "warning":  ("border:2px solid #E65100; border-left:8px solid #E65100; background:#FFF3E0; box-shadow:0 4px 12px rgba(230,81,0,0.15);",  "#E65100", "#110A05"),
-            "info":     ("border:2px solid #1565C0; border-left:8px solid #1565C0; background:#E3F2FD; box-shadow:0 4px 12px rgba(21,101,192,0.15);",  "#1565C0", "#110A05"),
-            "good":     ("border:2px solid #2E7D32; border-left:8px solid #2E7D32; background:#1B5E20; box-shadow:0 4px 12px rgba(46,125,50,0.15);",   "#ffffff", "#ffffff"),
+            "info":      ("border:2px solid #1565C0; border-left:8px solid #1565C0; background:#E3F2FD; box-shadow:0 4px 12px rgba(21,101,192,0.15);",  "#1565C0", "#110A05"),
+            "good":      ("border:2px solid #2E7D32; border-left:8px solid #2E7D32; background:#1B5E20; box-shadow:0 4px 12px rgba(46,125,50,0.15);",   "#ffffff", "#ffffff"),
         }
 
         ACTION_MAP = {
@@ -2008,7 +2019,7 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
-       🗨️ Conversation
+        🗨️ Conversation
     </div>
     """, unsafe_allow_html=True)
 
@@ -2102,7 +2113,7 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;'>
-      🌱 What I Can Help With
+        🌱 What I Can Help With
     </div>
     """, unsafe_allow_html=True)
 
