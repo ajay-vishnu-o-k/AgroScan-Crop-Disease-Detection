@@ -4,7 +4,6 @@
 # ============================================================
 
 import streamlit as st
-import streamlit.components.v1 as components
 import tensorflow as tf
 import numpy as np
 from PIL import Image
@@ -16,8 +15,14 @@ tf.get_logger().setLevel("ERROR")
 # ─── CHATBOT ENGINE ─────────────────────────────────────────
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "chatbot"))
-from chatbot.response_generator import generate_chatbot_response
+try:
+    from chatbot.response_generator import generate_chatbot_response as chatbot_response
+except Exception:
+    try:
+        from chatbot.chatbot_engine import chatbot_response
+    except Exception:
+        def chatbot_response(text):
+            return "Chatbot engine not found. Please check your chatbot folder."
 
 # ─── PAGE CONFIG ────────────────────────────────────────────
 st.set_page_config(
@@ -46,8 +51,8 @@ CLASS_LABELS = {
 
 CROP_EMOJI = {"Rice":"🌾", "Tomato":"🍅", "Potato":"🥔", "Wheat":"🌿"}
 
-# ─── Open-Meteo: No API key required ────────────────────────
-# Free agriculture weather API with soil temp, moisture, UV, evaporation & 7-day forecast
+# ─── WEATHER API KEY ────────────────────────────────────────
+OWM_API_KEY = "4f81d79be632f9cbe6a92458c47efa2f"
 
 # ============================================================
 #   CSS
@@ -132,31 +137,6 @@ section[data-testid="stSidebar"] .stRadio div {
 section[data-testid="stSidebar"] .stMarkdown p {
     font-size: 17px !important;
     color: #F1F8E9 !important;
-}
-section[data-testid="stSidebar"] p.agroscan-logo,
-section[data-testid="stSidebar"] .stMarkdownContainer p.agroscan-logo,
-section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p.agroscan-logo,
-.st-emotion-cache-11qgg2j p.agroscan-logo,
-p.agroscan-logo {
-    font-size: 30px !important;
-    color: #ffffff !important;
-    font-weight: 800 !important;
-    font-family: 'Syne', sans-serif !important;
-    padding: 10px 0 4px !important;
-    line-height: 1.2 !important;
-    letter-spacing: 0.03em !important;
-    display: block !important;
-}
-section[data-testid="stSidebar"] .stMarkdown div {
-    color: #ffffff !important;
-}
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3 {
-    color: #ffffff !important;
-    font-size: 42px !important;
-    font-family: 'Syne', sans-serif !important;
-    font-weight: 800 !important;
 }
 
 section[data-testid="stSidebar"] div.sidebar-alert-crit { color: #C62828 !important; }
@@ -883,99 +863,26 @@ def irrigation_recommendation(crop_type, rainfall, temperature, soil_type):
 # ============================================================
 #   WEATHER API
 # ============================================================
-@st.cache_data(ttl=86400) # Cache city coordinates for 24 hours (cities don't move)
-def get_coordinates(location: str):
-    """Convert city name to lat/lon using Open-Meteo geocoding API."""
-    clean_location = location.split(",")[0].strip()
-    try:
-        url = f"https://geocoding-api.open-meteo.com/v1/search?name={clean_location}&count=1&language=en&format=json"
-        r = requests.get(url, timeout=6)
-        if r.status_code == 200:
-            results = r.json().get("results", [])
-            if results:
-                return results[0]["latitude"], results[0]["longitude"], results[0]["name"]
-    except Exception:
-        pass
-    return None, None, None
-
-@st.cache_data(ttl=1800) # Cache live weather for 30 minutes to prevent API spamming
 def get_weather(location: str):
-    lat, lon, city_name = get_coordinates(location)
-    if not lat or not lon:
-        st.warning(f"⚠️ Could not find location '{location}'. Please use a valid city name.")
+    if OWM_API_KEY == "YOUR_OPENWEATHERMAP_API_KEY":
         return None
     try:
-        url = (
-            f"https://api.open-meteo.com/v1/forecast?"
-            f"latitude={lat}&longitude={lon}"
-            f"&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,"
-            f"wind_speed_10m,uv_index,et0_fao_evapotranspiration"
-            f"&hourly=soil_temperature_0cm,soil_moisture_0_to_1cm"
-            f"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,"
-            f"uv_index_max,et0_fao_evapotranspiration"
-            f"&timezone=auto&forecast_days=7"
-        )
-        r = requests.get(url, timeout=10)
+        url = (f"https://api.openweathermap.org/data/2.5/weather"
+               f"?q={location}&appid={OWM_API_KEY}&units=metric")
+        r = requests.get(url, timeout=6)
         if r.status_code == 200:
             d = r.json()
-            current  = d["current"]
-            hourly   = d["hourly"]
-            daily    = d["daily"]
-
-            # Weather code → description & icon mapping
-            wmo_desc = {
-                0:"Clear Sky", 1:"Mainly Clear", 2:"Partly Cloudy", 3:"Overcast",
-                45:"Foggy", 48:"Icy Fog", 51:"Light Drizzle", 53:"Drizzle",
-                55:"Heavy Drizzle", 61:"Slight Rain", 63:"Rain", 65:"Heavy Rain",
-                71:"Slight Snow", 73:"Snow", 75:"Heavy Snow", 80:"Rain Showers",
-                81:"Heavy Showers", 82:"Violent Showers", 95:"Thunderstorm",
-                96:"Thunderstorm with Hail", 99:"Heavy Thunderstorm",
-            }
-            wmo_icon = {
-                0:"Clear", 1:"Clear", 2:"Clouds", 3:"Clouds",
-                45:"Mist", 48:"Mist", 51:"Drizzle", 53:"Drizzle", 55:"Drizzle",
-                61:"Rain", 63:"Rain", 65:"Rain", 71:"Snow", 73:"Snow", 75:"Snow",
-                80:"Rain", 81:"Rain", 82:"Rain", 95:"Thunderstorm",
-                96:"Thunderstorm", 99:"Thunderstorm",
-            }
-            code = current.get("weather_code", 0)
-
-            # 7-day forecast list
-            forecast_days = []
-            for i in range(7):
-                forecast_days.append({
-                    "date":      daily["time"][i],
-                    "temp_max":  daily["temperature_2m_max"][i],
-                    "temp_min":  daily["temperature_2m_min"][i],
-                    "rain":      daily["precipitation_sum"][i],
-                    "uv":        daily["uv_index_max"][i],
-                    "evap":      daily["et0_fao_evapotranspiration"][i],
-                })
-
             return {
-                # Basic (same keys as before — existing code still works)
-                "temp":         round(current["temperature_2m"], 1),
-                "humidity":     current["relative_humidity_2m"],
-                "desc":         wmo_desc.get(code, "Unknown"),
-                "icon":         wmo_icon.get(code, "Clear"),
-                "wind":         round(current["wind_speed_10m"], 1),
-                "rain":         current.get("precipitation", 0),
-                "city":         city_name,
-                # Agriculture extras
-                "uv_index":     round(current.get("uv_index", 0), 1),
-                "evaporation":  round(current.get("et0_fao_evapotranspiration", 0), 2),
-                "soil_temp":    round(hourly["soil_temperature_0cm"][0], 1) if hourly["soil_temperature_0cm"] else "N/A",
-                "soil_moisture":round(hourly["soil_moisture_0_to_1cm"][0], 3) if hourly["soil_moisture_0_to_1cm"] else "N/A",
-                "forecast":     forecast_days,
+                "temp":     round(d["main"]["temp"], 1),
+                "humidity": d["main"]["humidity"],
+                "desc":     d["weather"][0]["description"],
+                "icon":     d["weather"][0]["main"],
+                "wind":     d["wind"]["speed"],
+                "rain":     d.get("rain", {}).get("1h", 0),
+                "city":     d["name"],
             }
-        else:
-            st.warning(f"⚠️ Weather API error {r.status_code}. Please try again.")
-    except requests.exceptions.ConnectionError:
-        st.warning("⚠️ No internet connection. Weather data unavailable.")
-    except requests.exceptions.Timeout:
-        st.warning("⚠️ Weather API timed out. Please try again.")
-    except Exception as e:
-        st.warning(f"⚠️ Weather error: {str(e)}")
+    except Exception:
+        pass
     return None
 
 def weather_disease_risk(weather, crop):
@@ -1149,15 +1056,13 @@ if "farmer_data" not in st.session_state:
 #   SIDEBAR
 # ============================================================
 with st.sidebar:
-    st.markdown("""
-    <p class="agroscan-logo">🌿 AgroScan</p>
-    """, unsafe_allow_html=True)
+    st.markdown("## 🌿 AgroScan")
     st.markdown("---")
 
     nav = None
     if st.session_state.farmer_data:
         f = st.session_state.farmer_data
-        st.markdown(f"##### 👤 {f['username']}")
+        st.markdown(f"### 👤 {f['username']}")
         st.markdown(f"**ID:** `{f['farmer_id']}`")
         st.markdown(f"📍 {f['location']}")
         st.markdown(f"🌱 **Current Crop:** {CROP_EMOJI.get(f['main_crop'],'')} {f['main_crop']} · {f['farm_size']} acres")
@@ -1211,14 +1116,9 @@ with st.sidebar:
         )
         st.markdown("---")
         if st.button("🚪 Logout", use_container_width=True):
-            keys_to_clear = [
-                "scan_history", "irr_history", "chat_history",
-                "selected_crop", "nav_override", "farmer_data",
-                "chat_input_key"
-            ]
-            for key in keys_to_clear:
-                if key in st.session_state:
-                    del st.session_state[key]
+            st.session_state.farmer_data = None
+            for key in ["scan_history","irr_history","chat_history","selected_crop","nav_override"]:
+                st.session_state.pop(key, None)
             st.rerun()
     else:
         st.markdown("#### Register or Login")
@@ -1250,7 +1150,7 @@ if not st.session_state.farmer_data:
                 username  = st.text_input("Full Name", placeholder="e.g. Rajan Pillai")
                 password  = st.text_input("Password", type="password", placeholder="Create a password")
                 password2 = st.text_input("Confirm Password", type="password", placeholder="Repeat password")
-                location  = st.text_input("Village / Town", placeholder="e.g. Chennai  (city name only, no state)")
+                location  = st.text_input("Village / Town", placeholder="e.g. Thrissur, Kerala")
                 farm_size = st.number_input("Farm Size (acres)", min_value=0.1, step=0.5, value=2.0)
                 main_crop = st.selectbox("Primary Crop", ["Rice", "Tomato", "Potato", "Wheat"])
                 submitted = st.form_submit_button("Register & Continue →", use_container_width=True)
@@ -1288,11 +1188,6 @@ if not st.session_state.farmer_data:
                         if err:
                             st.error(err)
                         else:
-                            # Clear any leftover state from previous session
-                            for key in ["scan_history", "irr_history", "chat_history",
-                                        "selected_crop", "nav_override", "chat_input_key"]:
-                                if key in st.session_state:
-                                    del st.session_state[key]
                             st.session_state.farmer_data = farmer
                             load_farmer_history()
                             st.success(f"✅ Welcome back, {farmer['username']}!")
@@ -1400,49 +1295,8 @@ if nav == "🏠 Dashboard":
                 <span>💨 {weather['wind']} m/s wind</span>
                 <span>🌧 {weather['rain']} mm rain</span>
               </div>
-              <div style="display:flex; gap:18px; margin-top:14px; flex-wrap:wrap;">
-                <span style="background:rgba(255,255,255,0.12); border-radius:10px; padding:6px 14px;
-                             font-size:14px; font-weight:700; color:#fff;">
-                  ☀️ UV Index: {weather.get('uv_index','N/A')}
-                </span>
-                <span style="background:rgba(255,255,255,0.12); border-radius:10px; padding:6px 14px;
-                             font-size:14px; font-weight:700; color:#fff;">
-                  💦 Evaporation: {weather.get('evaporation','N/A')} mm
-                </span>
-                <span style="background:rgba(255,255,255,0.12); border-radius:10px; padding:6px 14px;
-                             font-size:14px; font-weight:700; color:#fff;">
-                  🌡 Soil Temp: {weather.get('soil_temp','N/A')}°C
-                </span>
-                <span style="background:rgba(255,255,255,0.12); border-radius:10px; padding:6px 14px;
-                             font-size:14px; font-weight:700; color:#fff;">
-                  🪱 Soil Moisture: {weather.get('soil_moisture','N/A')} m³/m³
-                </span>
-              </div>
             </div>
             """, unsafe_allow_html=True)
-
-            # 7-day forecast
-            st.markdown("<b style='font-size:17px;color:#110A05;display:block;margin:16px 0 10px;'>📅 7-Day Crop Forecast</b>", unsafe_allow_html=True)
-            forecast = weather.get("forecast", [])
-            if forecast:
-                day_cols = st.columns(7)
-                for i, day in enumerate(forecast):
-                    with day_cols[i]:
-                        rain_color = "#C62828" if day['rain'] > 10 else "#1565C0" if day['rain'] > 0 else "#2E7D32"
-                        uv_color   = "#C62828" if day['uv'] > 7 else "#E65100" if day['uv'] > 4 else "#2E7D32"
-                        from datetime import datetime as dt
-                        day_label  = dt.strptime(day['date'], "%Y-%m-%d").strftime("%a")
-                        st.markdown(f"""
-                        <div style='background:#fff; border-radius:12px; padding:12px 8px;
-                                    border:1.5px solid #C8BFAF; text-align:center;'>
-                          <div style='font-size:13px; font-weight:800; color:#110A05;'>{day_label}</div>
-                          <div style='font-size:15px; font-weight:800; color:#C62828; margin-top:4px;'>{day['temp_max']}°</div>
-                          <div style='font-size:13px; color:#1565C0; font-weight:600;'>{day['temp_min']}°</div>
-                          <div style='font-size:12px; font-weight:700; color:{rain_color}; margin-top:4px;'>🌧 {day['rain']}mm</div>
-                          <div style='font-size:12px; font-weight:700; color:{uv_color};'>☀️ UV {day['uv']}</div>
-                          <div style='font-size:12px; font-weight:700; color:#5D4037;'>💦 {day['evap']}mm</div>
-                        </div>
-                        """, unsafe_allow_html=True)
             st.markdown("<b style='font-size:17px; color:#110A05; display:block; margin-bottom:6px;'>🔍 Weather-based Disease Risk:</b>", unsafe_allow_html=True)
             risks = weather_disease_risk(weather, crop)
             for level, msg in risks:
@@ -1450,7 +1304,7 @@ if nav == "🏠 Dashboard":
                 icon = {"high":"🔴","med":"🟡","low":"🟢"}.get(level,"🟢")
                 st.markdown(f'<div class="risk-badge {cls}">{icon} {msg}</div>', unsafe_allow_html=True)
         else:
-            st.info("🌤 Add your OpenWeatherMap API key in app.py to see live weather and disease risk alerts.")
+            st.info("🌤 Weather data unavailable. Please check your internet connection or city name.")
 
     with col_h:
         st.markdown('<div class="section-head">📜 Recent Scans</div>', unsafe_allow_html=True)
@@ -1515,56 +1369,23 @@ elif nav == "🔬 Disease Detection":
 
     crop = st.session_state.selected_crop
 
+    st.markdown(f"""
+    <div style='background:#1B5E20; border-radius:10px; padding:12px 18px;
+                margin:16px 0 22px; border:1.5px solid #81C784;
+                display:flex; align-items:center; gap:12px'>
+      <span style='font-size:24px'>{CROP_EMOJI.get(crop,'')}</span>
+      <span style='font-size:16px; color:#ffffff; font-weight:600'>
+        Active model: <b>{crop}</b>
+        &nbsp;·&nbsp; <code style='color:#A5D6A7'>{os.path.basename(MODEL_PATHS[crop])}</code>
+        &nbsp;·&nbsp; Classes: {' / '.join(CLASS_LABELS[crop])}
+      </span>
+    </div>
+    """, unsafe_allow_html=True)
 
     col_up, col_res = st.columns([1, 1.3], gap="large")
 
     with col_up:
         st.markdown("#### 📷 Upload Leaf Image")
-
-        # Upload zone label fix
-        st.markdown("""
-        <style>
-        [data-testid="stFileUploader"] label,
-        [data-testid="stFileUploader"] span,
-        [data-testid="stFileUploader"] p,
-        [data-testid="stFileUploader"] div,
-        [data-testid="stFileUploader"] small,
-        [data-testid="stFileUploader"] button {
-            color: #110A05 !important;
-            font-size: 16px !important;
-            font-weight: 700 !important;
-        }
-        [data-testid="stFileUploader"] section {
-            background: #F1F8E9 !important;
-            border: 2px dashed #2D6A2D !important;
-            border-radius: 16px !important;
-        }
-        [data-testid="stFileUploader"] section span,
-        [data-testid="stFileUploader"] section p,
-        [data-testid="stFileUploader"] section div,
-        [data-testid="stFileUploader"] section small {
-            color: #1B3A1B !important;
-            font-weight: 700 !important;
-            font-size: 16px !important;
-        }
-        /* Camera input label */
-        [data-testid="stCameraInput"] label,
-        [data-testid="stCameraInput"] span,
-        [data-testid="stCameraInput"] p,
-        [data-testid="stCameraInput"] div,
-        [data-testid="stCameraInput"] button {
-            color: #110A05 !important;
-            font-size: 16px !important;
-            font-weight: 700 !important;
-        }
-        [data-testid="stCameraInput"] video,
-        [data-testid="stCameraInput"] section {
-            border-radius: 14px !important;
-            border: 2px solid #2D6A2D !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
         uploaded   = st.file_uploader("Choose a leaf photo", type=["jpg","jpeg","png"])
         st.markdown("**— or take a photo —**")
         camera_img = st.camera_input("Open camera")
@@ -1670,8 +1491,8 @@ elif nav == "🌧 Irrigation Advisor":
         add_irrigation_record(crop, rainfall, temperature, soil_type, recs)
 
         st.markdown("""
-        <div style='background:#E3F2FD; border-radius:12px; padding:16px 20px; margin-bottom:22px; border:1.5px solid #1565C0'>
-          <span style='font-size:17px; color:#0D47A1; font-weight:600'>
+        <div style='background:#0D47A1; border-radius:12px; padding:16px 20px; margin-bottom:22px; border:1.5px solid #1565C0'>
+          <span style='font-size:17px; color:#ffffff; font-weight:600'>
             ✅ Live Automation Active! Field metrics have been automatically synced using real-time local weather feeds for <b>{}</b>. No manual adjustments required.
           </span>
         </div>
@@ -1919,252 +1740,244 @@ elif nav == "🔔 Notifications":
 # ============================================================
 #   AGRO CHATBOT PAGE
 # ============================================================
-# ============================================================
-#   AGRO CHATBOT PAGE (NEW PREMIUM INTERFACE)
-# ============================================================
-# ============================================================
-#   AGRO CHATBOT PAGE (COMPLETE UPDATED CODESET)
-# ============================================================
 elif nav == "🤖 Agro Chatbot":
 
-    # ── Modern Chatbot CSS Overhaul ──
-    st.markdown("""
-    <style>
-    /* Pinned layout containment */
-    .chat-container-card {
-        background: #ffffff;
-        border-radius: 24px;
-        border: 1px solid #E3DED5;
-        box-shadow: 0 12px 40px rgba(45, 106, 45, 0.04);
-        overflow: hidden;
-        margin-bottom: 25px;
-    }
-    
-    /* Force regular action buttons (Send, Clear) to have crisp white text */
-    .stButton > button:not([key^="sug_"]) *,
-    .stButton > button:not([key^="sug_"]) p,
-    .stButton > button:not([key^="sug_"]) span,
-    .stButton > button:not([key^="sug_"]) div {
-        color: #ffffff !important;
-    }
-    
-    /* Pill suggestion chips configuration */
-    .stButton > button[key^="sug_"] {
-        background: #F3F0E9 !important;
-        border: 1px solid #D1C9BC !important;
-        border-radius: 20px !important;
-        padding: 6px 16px !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        font-family: 'DM Sans', sans-serif !important;
-        box-shadow: none !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    /* Force clean theme-green text when resting */
-    .stButton > button[key^="sug_"] *,
-    .stButton > button[key^="sug_"] p,
-    .stButton > button[key^="sug_"] span {
-        color: #2D6A2D !important;
-    }
-    
-    .stButton > button[key^="sug_"]:hover {
-        background: #2D6A2D !important;
-        border-color: #2D6A2D !important;
-        transform: translateY(-1px);
-    }
-    
-    /* Force text to seamlessly shift to white on hover state */
-    .stButton > button[key^="sug_"]:hover *,
-    .stButton > button[key^="sug_"]:hover p,
-    .stButton > button[key^="sug_"]:hover span {
-        color: #ffffff !important;
-    }
+    # ── Import new chatbot engine ──
+    try:
+        sys.path.insert(0, os.path.join(BASE_DIR, "chatbot"))
+        from response_generator import generate_chatbot_response as _new_chatbot
+        USE_NEW_CHATBOT = True
+    except Exception:
+        USE_NEW_CHATBOT = False
 
-    /* Message bubble refinements */
-    .new-chat-bubble-user {
-        background: #2D6A2D;
-        color: #ffffff !important;
-        border-radius: 20px 20px 4px 20px;
-        padding: 14px 20px;
-        font-size: 16px;
-        line-height: 1.6;
-        max-width: 75%;
-        margin-left: auto;
-        margin-bottom: 12px;
-        box-shadow: 0 3px 10px rgba(45,106,45,0.15);
-    }
-    .new-chat-bubble-user * {
-        color: #ffffff !important;
-    }
-    
-    .new-chat-bubble-bot {
-        background: #ffffff;
-        color: #110A05 !important;
-        border: 1px solid #E3DED5;
-        border-radius: 20px 20px 20px 4px;
-        padding: 16px 20px;
-        font-size: 16px;
-        line-height: 1.6;
-        max-width: 80%;
-        margin-right: auto;
-        margin-bottom: 12px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.03);
-    }
-    
-    .bot-avatar-frame {
-        width: 38px; height: 38px;
-        border-radius: 50%;
-        background: #E8F5E9;
-        border: 1px solid #A5D6A7;
-        display: inline-flex; align-items: center; justify-content: center;
-        font-size: 18px;
-        margin-right: 10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    def _format_chatbot_reply(raw_response):
-        if isinstance(raw_response, str):
-            return raw_response
-        if isinstance(raw_response, dict):
-            reply = raw_response.get("reply", "")
+    # ── Format reply ──
+    def _format_chatbot_reply(raw):
+        if isinstance(raw, str):
+            return raw
+        if isinstance(raw, dict):
+            reply = raw.get("reply", "")
             if isinstance(reply, dict):
                 parts = []
-                if "causes" in reply: parts.append("**Causes:**\n" + "\n".join(f"• {c}" for c in reply["causes"]))
+                if "causes"     in reply: parts.append("**Causes:**\n"     + "\n".join(f"• {c}" for c in reply["causes"]))
                 if "prevention" in reply: parts.append("**Prevention:**\n" + "\n".join(f"• {p}" for p in reply["prevention"]))
-                if "treatment" in reply: parts.append("**Treatment:**\n" + "\n".join(f"• {t}" for t in reply["treatment"]))
+                if "treatment"  in reply: parts.append("**Treatment:**\n"  + "\n".join(f"• {t}" for t in reply["treatment"]))
                 return "\n\n".join(parts)
             if isinstance(reply, list):
                 return "\n".join(f"• {item}" for item in reply)
             return str(reply)
-        return str(raw_response)
+        return str(raw)
 
+    # ── Render bot text into HTML ──
     def _render_bot_text(text):
         lines = text.split("\n")
-        html_lines = []
+        html  = []
         in_list = False
         for line in lines:
             if line.startswith("• ") or line.startswith("- "):
                 if not in_list:
-                    html_lines.append("<ul style='margin:4px 0; padding-left:20px;'>")
+                    html.append("<ul style='margin:8px 0 8px 2px;padding-left:18px;'>")
                     in_list = True
-                html_lines.append(f"<li style='font-size:16px; margin-bottom:4px; color:#110A05;'>{line[2:]}</li>")
+                html.append(f"<li style='font-size:15px;font-weight:500;color:#110A05;margin-bottom:5px;line-height:1.6;'>{line[2:]}</li>")
             else:
                 if in_list:
-                    html_lines.append("</ul>")
+                    html.append("</ul>")
                     in_list = False
-                if line.startswith("**") and line.endswith("**"):
-                    html_lines.append(f"<div style='font-weight:700; color:#2D6A2D; margin:12px 0 6px;'>{line[2:-2]}</div>")
+                if line.strip().endswith(":") and len(line.strip()) < 40:
+                    html.append(f"<div style='font-family:Syne,sans-serif;font-size:15px;font-weight:800;color:#1B5E20;margin:12px 0 4px;border-left:3px solid #4CAF50;padding-left:8px;'>{line.strip()}</div>")
+                elif line.startswith("**") and line.endswith("**"):
+                    html.append(f"<div style='font-weight:800;font-size:15px;color:#1B5E20;margin:10px 0 4px;'>{line[2:-2]}</div>")
                 elif line.strip() == "":
-                    html_lines.append("<div style='height:8px'></div>")
+                    html.append("<div style='height:6px'></div>")
                 else:
-                    html_lines.append(f"<div style='margin-bottom:4px; color:#110A05;'>{line}</div>")
+                    html.append(f"<div style='font-size:15px;font-weight:500;color:#110A05;line-height:1.7;'>{line}</div>")
         if in_list:
-            html_lines.append("</ul>")
-        return "".join(html_lines)
+            html.append("</ul>")
+        return "".join(html)
 
+    # ── Detect message type from content ──
+    def _detect_type(text):
+        t = text.lower()
+        if any(w in t for w in ["symptom","identify","sign","leaf spot"]): return "symptoms"
+        if any(w in t for w in ["cause","reason","why","spread"]):         return "causes"
+        if any(w in t for w in ["treatment","cure","fungicide","spray"]):  return "treatment"
+        if any(w in t for w in ["prevent","protection","avoid"]):          return "prevention"
+        if any(w in t for w in ["irrigat","water","rainfall","drip"]):     return "irrigation"
+        if any(w in t for w in ["fertiliz","npk","nutrient","manure"]):    return "fertilizer"
+        if any(w in t for w in ["weather","climate","temperature","humid"]): return "weather"
+        if any(w in t for w in ["harvest","maturity","ready"]):            return "harvest"
+        if any(w in t for w in ["hello","hi","hey","i am agroscan"]):      return "greeting"
+        return "response"
+
+    TYPE_META = {
+        "greeting":   ("👋", "#4CAF50",  "#E8F5E9"),
+        "symptoms":   ("🔍", "#7B1FA2",  "#F3E5F5"),
+        "causes":     ("⚠️",  "#E65100",  "#FFF3E0"),
+        "treatment":  ("💊", "#1565C0",  "#E3F2FD"),
+        "prevention": ("🛡️",  "#2E7D32",  "#E8F5E9"),
+        "irrigation": ("💧", "#0277BD",  "#E1F5FE"),
+        "fertilizer": ("🌱", "#5D4037",  "#EFEBE9"),
+        "weather":    ("🌤️",  "#00838F",  "#E0F7FA"),
+        "harvest":    ("🌾", "#F57F17",  "#FFF8E1"),
+        "response":   ("🌿", "#2D6A2D",  "#F1F8E9"),
+    }
+
+    # ── Init chat history ──
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
         st.session_state.chat_history.append({
             "role": "bot",
-            "text": f"Hello {f['username']}! 👋 I'm your Smart Agro Assistant. Ask me anything about your {CROP_EMOJI.get(crop,'')} {crop} crop — diseases, irrigation, fertilizer, weather, or harvest tips!",
+            "text": f"🌱 Hello {f['username']}! I am AgroScan Agricultural Assistant.\n\nI can help you with:\n\n- Crop Diseases\n- Disease Symptoms\n- Disease Treatment\n- Irrigation Guidance\n- Weather Conditions\n- Crop Management\n\nSupported Crops:\n\n- Wheat\n- Rice\n- Potato\n- Tomato",
             "type": "greeting"
         })
 
-    # ── Premium Header Window Banner ──
+    # ── HEADER ──
     st.markdown(f"""
-    <div style='background: linear-gradient(135deg, #1B3A1B 0%, #2D6A2D 100%); border-radius: 20px; padding: 22px 28px; box-shadow: 0 8px 24px rgba(45,106,45,0.15); margin-bottom: 20px;'>
-        <div style='display: flex; align-items: center; gap: 16px;'>
-            <div style='width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 26px;'>🌿</div>
-            <div>
-                <div style='font-family: "Syne", sans-serif; font-size: 22px; font-weight: 800; color: #ffffff;'>Smart Agro Assistant</div>
-                <div style='font-size: 14px; color: #E8F5E9; font-weight: 500; opacity: 0.9; margin-top: 2px;'>Expert Insights on Crop Diseases • Irrigation • Fertilizer Management</div>
-            </div>
-            <div style='margin-left: auto; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.12); padding: 6px 14px; border-radius: 30px; font-size: 13px; color: #ffffff; font-weight: 700;'>
-                <div style='width: 8px; height: 8px; border-radius: 50%; background: #81C784;'></div> Engine Online
-            </div>
+    <div style='background:#1B5E20; border-radius:20px; padding:20px 26px;
+                margin-bottom:20px; display:flex; align-items:center; gap:16px;
+                border:1.5px solid #4CAF50; box-shadow:0 4px 16px rgba(27,94,32,0.25);'>
+      <div style='width:52px;height:52px;border-radius:50%;
+                  background:rgba(255,255,255,0.15);
+                  display:flex;align-items:center;justify-content:center;font-size:26px;'>
+        🌿
+      </div>
+      <div style='flex:1'>
+        <div style='font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#ffffff;'>
+          AgroScan Agricultural Assistant
         </div>
+        <div style='font-size:14px;color:rgba(255,255,255,0.75);margin-top:3px;font-weight:500;'>
+          Diseases · Irrigation · Fertilizer · Weather · Harvest · Soil
+        </div>
+      </div>
+      <div style='display:flex;align-items:center;gap:6px;
+                  background:rgba(255,255,255,0.12);
+                  border-radius:20px;padding:6px 14px;'>
+        <div style='width:8px;height:8px;border-radius:50%;background:#A5D6A7;'></div>
+        <span style='font-size:13px;font-weight:700;color:#ffffff;'>Online</span>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Sleek Crop Pill Suggestions Grid ──
-    st.markdown("<div style='font-size:13px; font-weight:700; color:#5A4A3A; text-transform:uppercase; letter-spacing:.08em; margin: 5px 0 12px 5px;'>💡 Select a Crop Profile</div>", unsafe_allow_html=True)
-    suggestions = ["Wheat", "Tomato", "Potato", "Rice"]
-    
+    # ── QUICK SUGGESTIONS ──
+    st.markdown("""
+    <div style='font-size:13px;font-weight:800;color:#4A3A2A;
+                text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
+      💬 Quick Questions
+    </div>
+    """, unsafe_allow_html=True)
+
+    suggestions = [
+        ("🌾", "Rice"),
+        ("🌿", "Wheat"),
+        ("🍅", "Tomato"),
+        ("🥔", "Potato"),
+    ]
     sug_cols = st.columns(4)
-    for i, sug in enumerate(suggestions):
+    for i, (icon, sug) in enumerate(suggestions):
         with sug_cols[i]:
-            emoji = CROP_EMOJI.get(sug, "🌱")
-            button_label = f"{emoji} {sug}"
-            
-            if st.button(button_label, key=f"sug_{i}", use_container_width=True):
-                st.session_state.chat_history.append({"role": "user", "text": sug})
-                raw = generate_chatbot_response(sug)
+            if st.button(f"{icon} {sug}", key=f"sug_{i}", use_container_width=True):
+                st.session_state.chat_history.append({"role":"user","text":sug})
+                if USE_NEW_CHATBOT:
+                    raw = _new_chatbot(sug)
+                else:
+                    raw = chatbot_response(sug)
                 reply = _format_chatbot_reply(raw)
-                st.session_state.chat_history.append({"role": "bot", "text": reply, "type": "response"})
+                st.session_state.chat_history.append({
+                    "role":"bot","text":reply,
+                    "type":_detect_type(reply)
+                })
                 st.rerun()
 
-    st.markdown("<div style='height:15px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
-    # ── Main Chat Thread Render ──
-    type_icons = {
-        "greeting": "👋", "disease": "🦠", "disease_causes": "🔬",
-        "disease_treatment": "💊", "disease_prevention": "🛡",
-        "irrigation": "💧", "fertilizer": "🌱", "weather": "🌤",
-        "harvest": "🌾", "recommendation": "✅", "app_help": "📱"
-    }
+    # ── CONVERSATION LABEL ──
+    st.markdown("""
+    <div style='font-size:13px;font-weight:800;color:#4A3A2A;
+                text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
+      🗨️ Conversation
+    </div>
+    """, unsafe_allow_html=True)
 
+    # ── CHAT MESSAGES ──
     for msg in st.session_state.chat_history:
         if msg["role"] == "user":
             st.markdown(f"""
-            <div class="new-chat-bubble-user">
-                {msg['text']}
+            <div style='display:flex;justify-content:flex-end;margin-bottom:16px;'>
+              <div style='display:flex;align-items:flex-end;gap:8px;max-width:75%;'>
+                <div style='background:#1B5E20;color:#ffffff;
+                            border-radius:20px 20px 4px 20px;
+                            padding:12px 18px;font-size:15px;
+                            font-weight:500;line-height:1.6;
+                            box-shadow:0 2px 10px rgba(27,94,32,0.25);'>
+                  {msg['text']}
+                </div>
+                <div style='width:32px;height:32px;border-radius:50%;
+                            background:#2D6A2D;flex-shrink:0;
+                            display:flex;align-items:center;
+                            justify-content:center;font-size:14px;
+                            box-shadow:0 2px 6px rgba(0,0,0,0.15);'>
+                  👤
+                </div>
+              </div>
             </div>
             """, unsafe_allow_html=True)
         else:
-            icon = type_icons.get(msg.get("type", ""), "🌿")
+            msg_type = msg.get("type","response")
+            icon, accent, bg = TYPE_META.get(msg_type, TYPE_META["response"])
             body = _render_bot_text(msg["text"])
             st.markdown(f"""
-            <div style='display: flex; align-items: flex-start; margin-bottom: 12px;'>
-                <div class="bot-avatar-frame">{icon}</div>
-                <div class="new-chat-bubble-bot">
-                    {body}
-                </div>
+            <div style='display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;'>
+              <div style='width:36px;height:36px;border-radius:50%;
+                          background:{accent};flex-shrink:0;
+                          display:flex;align-items:center;
+                          justify-content:center;font-size:17px;
+                          box-shadow:0 2px 8px rgba(0,0,0,0.15);
+                          margin-top:2px;'>
+                {icon}
+              </div>
+              <div style='background:#ffffff;border-radius:4px 20px 20px 20px;
+                          padding:16px 20px;max-width:82%;
+                          border:1.5px solid #E8E2D8;
+                          border-left:4px solid {accent};
+                          box-shadow:0 2px 10px rgba(0,0,0,0.06);'>
+                {body}
+              </div>
             </div>
             """, unsafe_allow_html=True)
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-    # ── Minimalist Input Console Box ──
+    # ── INPUT BOX ──
     if "chat_input_key" not in st.session_state:
         st.session_state.chat_input_key = 0
 
-    st.markdown("<div class='chat-container-card'>", unsafe_allow_html=True)
     col_input, col_send = st.columns([5, 1])
     with col_input:
         user_input = st.text_input(
-            "Ask a question",
-            placeholder="Type your agricultural query here (e.g., How to handle rice brown spot?)...",
+            "Message",
+            placeholder="e.g. What causes rice brown spot? or Potato late blight treatment",
             label_visibility="collapsed",
             key=f"chat_input_{st.session_state.chat_input_key}"
         )
     with col_send:
         send_btn = st.button("Send 📨", use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
     if send_btn and user_input.strip():
-        msg = user_input.strip()
-        st.session_state.chat_history.append({"role": "user", "text": msg})
-        raw = generate_chatbot_response(msg)
+        msg_text = user_input.strip()
+        st.session_state.chat_history.append({"role":"user","text":msg_text})
+        if USE_NEW_CHATBOT:
+            raw = _new_chatbot(msg_text)
+        else:
+            raw = chatbot_response(msg_text)
         reply = _format_chatbot_reply(raw)
-        st.session_state.chat_history.append({"role": "bot", "text": reply, "type": "response"})
+        st.session_state.chat_history.append({
+            "role":"bot","text":reply,
+            "type":_detect_type(reply)
+        })
         st.session_state.chat_input_key += 1
         st.rerun()
 
-    # Footer Actions
-    col_clear, _ = st.columns([1, 3])
-    with col_clear:
+    col_clr, col_sp = st.columns([1, 4])
+    with col_clr:
         if st.session_state.chat_history:
             if st.button("🗑 Clear", key="clear_chat", use_container_width=True):
                 st.session_state.chat_history = []
@@ -2172,20 +1985,32 @@ elif nav == "🤖 Agro Chatbot":
 
     st.markdown("---")
 
-    # ── Capabilities Matrix Cards ──
-    st.markdown('<div style="font-size:14px; font-weight:800; color:#110A05; text-transform:uppercase; letter-spacing:.07em; margin-bottom:14px;">🌱 What I Can Help With</div>', unsafe_allow_html=True)
-    cap_cols = st.columns(3)
+    # ── CAPABILITIES GRID ──
+    st.markdown("""
+    <div style='font-size:13px;font-weight:800;color:#4A3A2A;
+                text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;'>
+      🌱 What I Can Help With
+    </div>
+    """, unsafe_allow_html=True)
+
     capabilities = [
-        ("🦠", "Disease Diagnostics", "Triggers immediate causes, symptom matrices and chemical/organic treatments."),
-        ("💧", "Irrigation Automation", "Adapts recommendations based on soil moisture parameters and local water limits."),
-        ("🌱", "Nutrient Optimization", "Calculates balanced NPK fertilizer needs per specific cultivation phase.")
+        ("🦠", "#C62828", "Disease Info",    "Symptoms, causes, treatment & prevention"),
+        ("💧", "#0277BD", "Irrigation",      "Water requirements & irrigation methods"),
+        ("🌱", "#5D4037", "Fertilizer",      "NPK & nutrient recommendations per crop"),
+        ("🌤", "#00838F", "Weather",         "Best climate & temperature conditions"),
+        ("🌾", "#F57F17", "Harvest Tips",    "When and how to harvest each crop"),
+        ("🌍", "#2E7D32", "Soil & Farming",  "Soil types and cultivation guidance"),
     ]
-    for i, (icon, title, desc) in enumerate(capabilities):
+    cap_cols = st.columns(3)
+    for i, (icon, color, title, desc) in enumerate(capabilities):
         with cap_cols[i % 3]:
             st.markdown(f"""
-            <div class='capability-card' style='padding: 16px; border-radius:16px;'>
-              <div style='font-size:24px; margin-bottom:6px;'>{icon}</div>
-              <div style='font-size:15px; font-weight:800; color:#110A05; margin-bottom:4px;'>{title}</div>
-              <div style='font-size:13px; color:#6A5A4A; line-height:1.5;'>{desc}</div>
+            <div style='background:#ffffff;border-radius:14px;padding:18px 16px;
+                        border:1.5px solid #E8E2D8;margin-bottom:10px;
+                        border-top:4px solid {color};
+                        box-shadow:0 2px 8px rgba(0,0,0,0.05);'>
+              <div style='font-size:28px;margin-bottom:8px;'>{icon}</div>
+              <div style='font-size:15px;font-weight:800;color:#110A05;margin-bottom:4px;'>{title}</div>
+              <div style='font-size:13px;color:#6A5A4A;line-height:1.5;font-weight:500;'>{desc}</div>
             </div>
             """, unsafe_allow_html=True)
