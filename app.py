@@ -1406,7 +1406,7 @@ elif nav == "🔬 Disease Detection":
         img_source = camera_img if camera_img else uploaded
         if img_source:
             img_pil = Image.open(img_source)
-            st.image(img_pil, caption="Leaf image", use_container_width=True)
+            st.image(img_pil, caption="Leaf image", width=600)
 
         if scan_btn:
             if not img_source:
