@@ -88,7 +88,7 @@ except Exception:
 st.set_page_config(
     page_title="AgroScan",
     page_icon="",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="expanded",
 )
 
@@ -160,9 +160,6 @@ section[data-testid="stSidebar"] .stRadio > div > label > div,
 section[data-testid="stSidebar"] .stSelectbox > div > div,
 section[data-testid="stSidebar"] .stTextInput > div > div > input,
 section[data-testid="stSidebar"] .stNumberInput > div > div > input,
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3,
 section[data-testid="stSidebar"] li,
 section[data-testid="stSidebar"] a,
 section[data-testid="stSidebar"] button,
@@ -171,6 +168,25 @@ section[data-testid="stSidebar"] .stMarkdown {
     color: #F1F8E9 !important;
     font-size: 17px !important;
     font-weight: 600 !important;
+}
+
+section[data-testid="stSidebar"] h1 {
+    color: #F1F8E9 !important;
+    font-size: 34px !important;
+    font-weight: 800 !important;
+    font-family: 'Syne', sans-serif !important;
+}
+section[data-testid="stSidebar"] h2 {
+    color: #F1F8E9 !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    font-family: 'Syne', sans-serif !important;
+}
+section[data-testid="stSidebar"] h3 {
+    color: #F1F8E9 !important;
+    font-size: 21px !important;
+    font-weight: 700 !important;
+    font-family: 'DM Sans', sans-serif !important;
 }
 
 section[data-testid="stSidebar"] .stTabs [data-baseweb="tab"] {
