@@ -73,21 +73,23 @@ section[data-testid="stSidebar"] ::-webkit-scrollbar-thumb:hover { background: #
 html, body, [class*="css"], p, span, div, label {
     font-family: 'DM Sans', sans-serif;
     color: #110A05;
-    font-size: 20px;
+    font-size: 15px;
 }
 
 /* General text size boost — only size, NOT color, to avoid overriding white-on-dark areas */
 p, li {
-    font-size: 20px !important;
-    line-height: 1.8 !important;
+    font-size: 15px !important;
+    line-height: 1.6 !important;
 }
 
 /* ── Main background ── */
 .main .block-container {
     background: #F8F5EF;
-    padding-top: 1.5rem;
-    padding-bottom: 3rem;
-    max-width: 1200px;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+    max-width: 1100px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
 }
 
 /* ── Sidebar ── */
@@ -430,12 +432,23 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
 .stSlider > div > div > div > div { background: #4CAF50 !important; }
 
 /* ── Upload zone ── */
-[data-testid="stFileUploader"] {
-    border: 2px dashed #81C784 !important;
-    border-radius: 16px !important;
-    background: #F1F8E9 !important;
-    padding: 14px !important;
-}
+[data-testid="stFileUploader"] section {
+            background: #ffffff !important;
+            border: 2px dashed #2D6A2D !important;
+            border-radius: 16px !important;
+        }
+        [data-testid="stFileUploader"] section span,
+        [data-testid="stFileUploader"] section p,
+        [data-testid="stFileUploader"] section div,
+        [data-testid="stFileUploader"] section small,
+        [data-testid="stFileUploader"] section * {
+            color: #110A05 !important;
+            font-weight: 700 !important;
+            font-size: 16px !important;
+        }
+        [data-testid="stFileUploader"] section svg {
+            fill: #2D6A2D !important;
+        }
 
 /* ── Dataframe ── */
 .stDataFrame { border-radius: 12px !important; overflow: hidden; }
@@ -577,7 +590,17 @@ def load_model(crop: str):
     if not os.path.exists(path):
         st.error(f"Model file not found: {path}")
         return None
-    return tf.keras.models.load_model(path)
+    try:
+        return tf.keras.models.load_model(path)
+    except TypeError:
+        try:
+            return tf.keras.models.load_model(path, compile=False)
+        except Exception as e:
+            st.error(f"Model load error for {crop}: {str(e)}")
+            return None
+    except Exception as e:
+        st.error(f"Model load error for {crop}: {str(e)}")
+        return None
 
 def predict(model, img_pil, crop: str):
     img  = img_pil.convert("RGB").resize((224, 224))
@@ -1369,19 +1392,6 @@ elif nav == "🔬 Disease Detection":
 
     crop = st.session_state.selected_crop
 
-    st.markdown(f"""
-    <div style='background:#1B5E20; border-radius:10px; padding:12px 18px;
-                margin:16px 0 22px; border:1.5px solid #81C784;
-                display:flex; align-items:center; gap:12px'>
-      <span style='font-size:24px'>{CROP_EMOJI.get(crop,'')}</span>
-      <span style='font-size:16px; color:#ffffff; font-weight:600'>
-        Active model: <b>{crop}</b>
-        &nbsp;·&nbsp; <code style='color:#A5D6A7'>{os.path.basename(MODEL_PATHS[crop])}</code>
-        &nbsp;·&nbsp; Classes: {' / '.join(CLASS_LABELS[crop])}
-      </span>
-    </div>
-    """, unsafe_allow_html=True)
-
     col_up, col_res = st.columns([1, 1.3], gap="large")
 
     with col_up:
@@ -1396,7 +1406,7 @@ elif nav == "🔬 Disease Detection":
         img_source = camera_img if camera_img else uploaded
         if img_source:
             img_pil = Image.open(img_source)
-            st.image(img_pil, caption="Leaf image", use_column_width=True)
+            st.image(img_pil, caption="Leaf image", use_container_width=True)
 
         if scan_btn:
             if not img_source:
