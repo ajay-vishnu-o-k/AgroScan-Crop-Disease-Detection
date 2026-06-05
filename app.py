@@ -584,6 +584,9 @@ def load_farmer_history():
 # ============================================================
 #   MODEL LOADER
 # ============================================================
+# ============================================================
+#    MODEL LOADER
+# ============================================================
 @st.cache_resource(show_spinner="Loading AI model…")
 def load_model(crop: str):
     path = MODEL_PATHS[crop]
@@ -591,20 +594,46 @@ def load_model(crop: str):
         st.error(f"Model file not found: {path}")
         return None
 
-    # Try standard load first
+    # Define compatibility classes for legacy Keras 2 environments
+    from keras.layers import InputLayer
+    class CompatInputLayer(InputLayer):
+        def __init__(self, **kwargs):
+            # Core Fix: Translate Keras 3 'batch_shape' into legacy Keras 2 'batch_input_shape'
+            if "batch_shape" in kwargs:
+                kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
+            kwargs.pop("optional", None)
+            super().__init__(**kwargs)
+
+    # 1. Gather all core Keras references available in this environment
+    # This allows us to map Keras 3 names smoothly back to Keras 2 components
+    custom_map = {
+        "InputLayer": CompatInputLayer,
+    }
+
+    # 2. Safely map missing Keras 3 structures back to active legacy equivalents
     try:
-        return tf.keras.models.load_model(path, compile=False)
+        import keras.engine.functional as legacy_funct
+        custom_map["Functional"] = legacy_funct.Functional
+    except ImportError:
+        try:
+            import keras.src.engine.functional as legacy_src_funct
+            custom_map["Functional"] = legacy_src_funct.Functional
+        except ImportError:
+            pass
+
+    # Try standard load first, passing our structural overrides
+    try:
+        return tf.keras.models.load_model(path, compile=False, custom_objects=custom_map)
     except Exception:
         pass
 
-    # For .keras format — convert to h5 and reload
+    # For .keras format — extract, update config JSON namespaces, and manual build
     if path.endswith(".keras"):
         try:
             import zipfile
             import tempfile
             import json
 
-            # .keras is a zip file — extract and load weights manually
             with tempfile.TemporaryDirectory() as tmpdir:
                 with zipfile.ZipFile(path, "r") as z:
                     z.extractall(tmpdir)
@@ -614,10 +643,16 @@ def load_model(crop: str):
 
                 if os.path.exists(config_path):
                     with open(config_path, "r") as cf:
-                        config = json.load(cf)
+                        raw_config = cf.read()
+                    
+                    # Core fix: hot-patch incoming JSON strings to stop checking 
+                    # Keras 3 namespaces that break Keras 2 engines
+                    patched_config = raw_config.replace("keras.src.models.functional", "keras.src.engine.functional")
+                    config = json.loads(patched_config)
+
                     model = tf.keras.models.model_from_json(
                         json.dumps(config),
-                        custom_objects={}
+                        custom_objects=custom_map
                     )
                     if os.path.exists(weights_path):
                         model.load_weights(weights_path)
@@ -625,20 +660,12 @@ def load_model(crop: str):
         except Exception:
             pass
 
-    # For .h5 format — patch InputLayer
+    # Fallback default reload strategy
     try:
-        from keras.layers import InputLayer
-
-        class CompatInputLayer(InputLayer):
-            def __init__(self, **kwargs):
-                kwargs.pop("batch_shape", None)
-                kwargs.pop("optional", None)
-                super().__init__(**kwargs)
-
         return tf.keras.models.load_model(
             path,
             compile=False,
-            custom_objects={"InputLayer": CompatInputLayer}
+            custom_objects=custom_map
         )
     except Exception as e:
         st.error(f"Model load error for {crop}: {str(e)}")
@@ -2004,7 +2031,7 @@ elif nav == "🤖 Agro Chatbot":
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-    # FIXED: Wrapped input loop mechanics inside a native clean st.form component context to avoid st.rerun widget tree fragmentation
+    # Clean input loop mechanics inside form component wrapper
     with st.form(key="chatbot_input_form", clear_on_submit=True):
         col_input, col_send = st.columns([5, 1])
         with col_input:
