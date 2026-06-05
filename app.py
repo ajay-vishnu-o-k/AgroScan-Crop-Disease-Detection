@@ -883,7 +883,7 @@ def irrigation_recommendation(crop_type, rainfall, temperature, soil_type):
     if rainfall > 120:
         recs.append(" Heavy rainfall detected — reduce irrigation to prevent waterlogging.")
     elif rainfall >= 60:
-        recs.append("🌦 Moderate rainfall available — maintain balanced irrigation schedule.")
+        recs.append(" Sauvage/Moderate rainfall available — maintain balanced irrigation schedule.")
     else:
         recs.append("☀️ Low rainfall detected — additional irrigation is necessary.")
 
@@ -954,30 +954,30 @@ def weather_disease_risk(weather, crop):
     if not weather:
         return []
     temp, hum, rain = weather["temp"], weather["humidity"], weather.get("rain", 0)
-    risks = []
+    riskes = []
     if crop == "Rice":
         if hum > 80 and temp > 25:
-            risks.append(("high", "High risk of Bacterial Leaf Blight — hot & humid conditions detected."))
+            riskes.append(("high", "High risk of Bacterial Leaf Blight — hot & humid conditions detected."))
         if hum > 75:
-            risks.append(("med",  "Moderate risk of Brown Spot — maintain good field drainage."))
+            riskes.append(("med",  "Moderate risk of Brown Spot — maintain good field drainage."))
     elif crop == "Tomato":
         if temp < 20 and rain > 0:
-            risks.append(("high", "High risk of Late Blight — cool & wet conditions detected."))
+            riskes.append(("high", "High risk of Late Blight — cool & wet conditions detected."))
         if hum > 75 and temp > 22:
-            risks.append(("med",  "Moderate risk of Early Blight — warm & humid weather."))
+            riskes.append(("med",  "Moderate risk of Early Blight — warm & humid weather."))
     elif crop == "Potato":
         if temp < 20 and hum > 80:
-            risks.append(("high", "High risk of Late Blight — cool & wet conditions."))
+            riskes.append(("high", "High risk of Late Blight — cool & wet conditions."))
         if hum > 70:
-            risks.append(("med",  "Watch for Early Blight — current humidity levels are elevated."))
+            riskes.append(("med",  "Watch for Early Blight — current humidity levels are elevated."))
     elif crop == "Wheat":
         if temp > 15 and hum > 70:
-            risks.append(("high", "High risk of Brown Rust — warm & moist conditions."))
+            riskes.append(("high", "High risk of Brown Rust — warm & moist conditions."))
         if temp < 15 and hum > 80:
-            risks.append(("high", "High risk of Yellow Rust — cool & wet conditions."))
-    if not risks:
-        risks.append(("low", "No significant disease risk from current weather conditions."))
-    return risks
+            riskes.append(("high", "High risk of Yellow Rust — cool & wet conditions."))
+    if not riskes:
+        riskes.append(("low", "No significant disease risk from current weather conditions."))
+    return riskes
 
 
 # ============================================================
@@ -1450,7 +1450,8 @@ elif nav == "🔬 Disease Detection":
         scan_btn = st.button("🔍 Detect Disease", use_container_width=True)
 
     with col_res:
-        img_source = camera_img if camera_img else uploaded
+        # Fixed source priority selection fallback context
+        img_source = uploaded if uploaded else camera_img
         if img_source:
             img_pil = Image.open(img_source)
             st.image(img_pil, caption="Leaf image", width=600)
@@ -1598,17 +1599,17 @@ elif nav == "🌧 Irrigation Advisor":
                 """.format(rec), unsafe_allow_html=True)
 
             final = recs[-1]
-            final_color = "#ffffff"
-            final_bg    = "#C62828" if "frequently" in final.lower() or "warning" in final.lower() else "#1B5E20"
-            st.markdown("""
-            <div style='background:{}; border-radius:14px; padding:20px 22px;
-                        border:2px solid #4CAF50; margin-top:8px'>
-              <div style='font-family:Syne,sans-serif; font-size:17px; font-weight:800; color:#ffffff; margin-bottom:6px'>
+            final_bg = "#C62828" if "frequently" in final.lower() or "warning" in final.lower() else "#1B5E20"
+            
+            # FIXED: Extracted nested custom design style components safely to bypass Python positional indexing parser issues
+            st.markdown(f"""
+            <div style="background:{final_bg}; border-radius:14px; padding:20px 22px; border:2px solid #4CAF50; margin-top:8px">
+              <div style="font-family:Syne,sans-serif; font-size:17px; font-weight:800; color:#ffffff; margin-bottom:6px">
                 Final Decision
               </div>
-              <p style='font-size:16px; color:#ffffff; margin:0; font-weight:600;'>{}</p>
+              <p style="font-size:16px; color:#ffffff; margin:0; font-weight:600;">{final}</p>
             </div>
-            """.format(final_bg, final), unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div style='background:#FFF3E0; border-radius:14px; padding:32px; border:1.5px solid #FFCC80; text-align:center'>
@@ -2003,35 +2004,34 @@ elif nav == "🤖 Agro Chatbot":
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-    # ── INPUT BOX ──
-    if "chat_input_key" not in st.session_state:
-        st.session_state.chat_input_key = 0
+    # FIXED: Wrapped input loop mechanics inside a native clean st.form component context to avoid st.rerun widget tree fragmentation
+    with st.form(key="chatbot_input_form", clear_on_submit=True):
+        col_input, col_send = st.columns([5, 1])
+        with col_input:
+            user_input = st.text_input(
+                "Message",
+                placeholder="e.g. What causes rice brown spot? or Potato late blight treatment",
+                label_visibility="collapsed"
+            )
+        with col_send:
+            send_btn = st.form_submit_button("Send 📨", use_container_width=True)
 
-    col_input, col_send = st.columns([5, 1])
-    with col_input:
-        user_input = st.text_input(
-            "Message",
-            placeholder="e.g. What causes rice brown spot? or Potato late blight treatment",
-            label_visibility="collapsed",
-            key=f"chat_input_{st.session_state.chat_input_key}"
-        )
-    with col_send:
-        send_btn = st.button("Send 📨", use_container_width=True)
-
-    if send_btn and user_input.strip():
-        msg_text = user_input.strip()
-        st.session_state.chat_history.append({"role":"user","text":msg_text})
-        if USE_NEW_CHATBOT:
-            raw = _new_chatbot(msg_text)
-        else:
-            raw = chatbot_response(msg_text)
-        reply = _format_chatbot_reply(raw)
-        st.session_state.chat_history.append({
-            "role":"bot","text":reply,
-            "type":_detect_type(reply)
-        })
-        st.session_state.chat_input_key += 1
-        st.rerun()
+        if send_btn and user_input.strip():
+            msg_text = user_input.strip()
+            st.session_state.chat_history.append({"role": "user", "text": msg_text})
+            
+            if USE_NEW_CHATBOT:
+                raw = _new_chatbot(msg_text)
+            else:
+                raw = chatbot_response(msg_text)
+                
+            reply = _format_chatbot_reply(raw)
+            st.session_state.chat_history.append({
+                "role": "bot",
+                "text": reply,
+                "type": _detect_type(reply)
+            })
+            st.rerun()
 
     col_clr, col_sp = st.columns([1, 4])
     with col_clr:
