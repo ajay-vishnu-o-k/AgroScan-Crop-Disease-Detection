@@ -87,7 +87,7 @@ except Exception:
 # ─── PAGE CONFIG ────────────────────────────────────────────
 st.set_page_config(
     page_title="AgroScan",
-    page_icon="🌿",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -109,7 +109,7 @@ CLASS_LABELS = {
     "Wheat":  ["Brown Rust", "Healthy", "Yellow Rust"],
 }
 
-CROP_EMOJI = {"Rice":"🌾", "Tomato":"🍅", "Potato":"🥔", "Wheat":"🌿"}
+CROP_EMOJI = {"Rice":"", "Tomato":"", "Potato":"", "Wheat":""}
 
 OWM_API_KEY = "4f81d79be632f9cbe6a92458c47efa2f"
 
@@ -916,41 +916,41 @@ def irrigation_recommendation(crop_type, rainfall, temperature, soil_type):
     elif rainfall >= 60:
         recs.append("Average/Moderate rainfall available — maintain balanced irrigation schedule.")
     else:
-        recs.append("☀️ Low rainfall detected — additional irrigation is necessary.")
+        recs.append("Low rainfall detected — additional irrigation is necessary.")
 
     if temperature > 38:
-        recs.append("🌡 Very high temperature — irrigate frequently to counter rapid evaporation.")
+        recs.append("Very high temperature — irrigate frequently to counter rapid evaporation.")
     elif temperature >= 25:
-        recs.append("🌡 Temperature is normal — good conditions for healthy crop growth.")
+        recs.append("Temperature is normal — good conditions for healthy crop growth.")
     else:
-        recs.append("🌡 Low temperature reduces evaporation — reduce irrigation frequency.")
+        recs.append("Low temperature reduces evaporation — reduce irrigation frequency.")
 
     soil_advice = {
-        "sandy":    "🪨 Sandy soil loses water quickly — light irrigation every 2 days recommended.",
-        "clay":     "🪨 Clay soil retains water — less frequent irrigation needed.",
-        "loamy":    "🪨 Loamy soil has balanced moisture — maintain regular irrigation schedule.",
-        "red":      "🪨 Red soil dries quickly — moderate and regular irrigation required.",
-        "black":    "🪨 Black soil retains moisture efficiently — avoid excessive irrigation.",
-        "alluvial": "🪨 Alluvial soil supports good water retention and fertility.",
+        "sandy":    "Sandy soil loses water quickly — light irrigation every 2 days recommended.",
+        "clay":     "Clay soil retains water — less frequent irrigation needed.",
+        "loamy":    "Loamy soil has balanced moisture — maintain regular irrigation schedule.",
+        "red":      "Red soil dries quickly — moderate and regular irrigation required.",
+        "black":    "Black soil retains moisture efficiently — avoid excessive irrigation.",
+        "alluvial": "Alluvial soil supports good water retention and fertility.",
     }
-    recs.append(soil_advice.get(soil_type, "🪨 Unknown soil type — monitor soil moisture manually."))
+    recs.append(soil_advice.get(soil_type, "Unknown soil type — monitor soil moisture manually."))
 
     crop_advice = {
-        "tomato": "🍅 Tomato needs moderate consistent irrigation, especially during fruit development.",
-        "potato": "🥔 Potato requires uniform soil moisture for healthy tuber formation.",
-        "wheat":  "🌿 Wheat needs moderate irrigation during early growth stages.",
-        "rice":   "🌾 Rice requires high water availability and performs well in flooded conditions.",
+        "tomato": "Tomato needs moderate consistent irrigation, especially during fruit development.",
+        "potato": "Potato requires uniform soil moisture for healthy tuber formation.",
+        "wheat":  "Wheat needs moderate irrigation during early growth stages.",
+        "rice":   "Rice requires high water availability and performs well in flooded conditions.",
     }
-    recs.append(crop_advice.get(crop_type, "🌱 Crop-specific irrigation data unavailable."))
+    recs.append(crop_advice.get(crop_type, "Crop-specific irrigation data unavailable."))
 
     if rainfall < 50 and temperature > 35 and soil_type == "sandy":
-        final = "⚠️ FINAL DECISION: Irrigate frequently — hot weather + low rainfall + sandy soil cause rapid moisture loss."
+        final = "FINAL DECISION: Irrigate frequently — hot weather + low rainfall + sandy soil cause rapid moisture loss."
     elif rainfall > 120 and soil_type == "clay":
-        final = "✅ FINAL DECISION: Avoid extra irrigation — heavy rainfall + clay soil risk waterlogging."
+        final = "FINAL DECISION: Avoid extra irrigation — heavy rainfall + clay soil risk waterlogging."
     elif soil_type == "loamy":
-        final = "✅ FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture."
+        final = "FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture."
     else:
-        final = "✅ FINAL DECISION: Monitor field moisture regularly and irrigate based on crop conditions."
+        final = "FINAL DECISION: Monitor field moisture regularly and irrigate based on crop conditions."
     recs.append(final)
 
     return recs
@@ -1029,14 +1029,14 @@ def generate_weather_notifications(weather, crop, location):
     if crop == "Rice":
         if hum > 80 and temp > 25:
             notifications.append({
-                "type": "critical", "icon": "🔴",
+                "type": "critical", "icon": "",
                 "title": "Bacterial Leaf Blight Risk",
                 "message": f"Hot ({temp}°C) and humid ({hum}%) conditions in {location} — ideal for Bacterial Leaf Blight spread. Inspect rice leaves immediately.",
                 "action": "Go to Disease Detection", "time": now,
             })
         if hum > 75:
             notifications.append({
-                "type": "warning", "icon": "🟡",
+                "type": "warning", "icon": "",
                 "title": "Brown Spot Risk",
                 "message": f"Humidity at {hum}% — conditions favour Brown Spot in rice. Ensure proper field drainage.",
                 "action": "Check Irrigation", "time": now,
@@ -1044,14 +1044,14 @@ def generate_weather_notifications(weather, crop, location):
     elif crop == "Tomato":
         if temp < 20 and rain > 0:
             notifications.append({
-                "type": "critical", "icon": "🔴",
+                "type": "critical", "icon": "",
                 "title": "Late Blight Alert",
                 "message": f"Cool ({temp}°C) and wet conditions — high Late Blight risk for tomato. Apply fungicide immediately.",
                 "action": "Go to Disease Detection", "time": now,
             })
         if hum > 75 and temp > 22:
             notifications.append({
-                "type": "warning", "icon": "🟡",
+                "type": "warning", "icon": "",
                 "title": "Early Blight Risk",
                 "message": f"Warm and humid weather ({hum}% humidity) — watch for Early Blight on tomato leaves.",
                 "action": "Scan Your Crop", "time": now,
@@ -1059,14 +1059,14 @@ def generate_weather_notifications(weather, crop, location):
     elif crop == "Potato":
         if temp < 20 and hum > 80:
             notifications.append({
-                "type": "critical", "icon": "🔴",
+                "type": "critical", "icon": "",
                 "title": "Late Blight Alert",
                 "message": f"Cool ({temp}°C) and highly humid ({hum}%) — severe Late Blight risk for potato. Act immediately.",
                 "action": "Go to Disease Detection", "time": now,
             })
         if hum > 70:
             notifications.append({
-                "type": "warning", "icon": "🟡",
+                "type": "warning", "icon": "",
                 "title": "Early Blight Watch",
                 "message": f"Elevated humidity ({hum}%) — monitor potato plants for Early Blight symptoms.",
                 "action": "Scan Your Crop", "time": now,
@@ -1074,14 +1074,14 @@ def generate_weather_notifications(weather, crop, location):
     elif crop == "Wheat":
         if temp > 15 and hum > 70:
             notifications.append({
-                "type": "critical", "icon": "🔴",
+                "type": "critical", "icon": "",
                 "title": "Brown Rust Alert",
                 "message": f"Warm ({temp}°C) and moist ({hum}%) — high Brown Rust risk for wheat. Apply fungicide spray.",
                 "action": "Go to Disease Detection", "time": now,
             })
         if temp < 15 and hum > 80:
             notifications.append({
-                "type": "critical", "icon": "🔴",
+                "type": "critical", "icon": "",
                 "title": "Yellow Rust Alert",
                 "message": f"Cool ({temp}°C) and wet ({hum}%) — Yellow Rust conditions detected. Monitor fields closely.",
                 "action": "Scan Your Crop", "time": now,
@@ -1089,14 +1089,14 @@ def generate_weather_notifications(weather, crop, location):
 
     if rain > 10:
         notifications.append({
-            "type": "info", "icon": "🌧",
+            "type": "info", "icon": "",
             "title": "Skip Irrigation Today",
             "message": f"Rainfall of {rain}mm detected in {location}. No additional irrigation needed today — save water.",
             "action": "View Irrigation Advisor", "time": now,
         })
     elif rain == 0 and temp > 35:
         notifications.append({
-            "type": "warning", "icon": "🟠",
+            "type": "warning", "icon": "",
             "title": "Irrigate Urgently",
             "message": f"No rainfall and high temperature ({temp}°C) in {location}. Crops may be under heat stress — irrigate now.",
             "action": "View Irrigation Advisor", "time": now,
@@ -1104,7 +1104,7 @@ def generate_weather_notifications(weather, crop, location):
 
     if wind > 7:
         notifications.append({
-            "type": "info", "icon": "🌬️",
+            "type": "info", "icon": "",
             "title": "Avoid Spraying Today",
             "message": f"Wind speed is {wind} m/s — too high for pesticide or fungicide spraying. Wait for calmer conditions.",
             "action": None, "time": now,
@@ -1112,7 +1112,7 @@ def generate_weather_notifications(weather, crop, location):
 
     if temp > 38:
         notifications.append({
-            "type": "warning", "icon": "☀️",
+            "type": "warning", "icon": "",
             "title": "Heat Stress Warning",
             "message": f"Extreme temperature of {temp}°C detected. {crop} crops may suffer heat stress — increase irrigation frequency.",
             "action": "View Irrigation Advisor", "time": now,
@@ -1121,7 +1121,7 @@ def generate_weather_notifications(weather, crop, location):
     frost_thresh = {"Rice": 10, "Tomato": 8, "Potato": 5, "Wheat": 3}
     if temp < frost_thresh.get(crop, 5):
         notifications.append({
-            "type": "critical", "icon": "❄️",
+            "type": "critical", "icon": "",
             "title": "Frost Risk Warning",
             "message": f"Temperature dropped to {temp}°C — frost risk for {crop}. Cover crops or apply protective measures immediately.",
             "action": None, "time": now,
@@ -1129,7 +1129,7 @@ def generate_weather_notifications(weather, crop, location):
 
     if not notifications:
         notifications.append({
-            "type": "good", "icon": "✅",
+            "type": "good", "icon": "",
             "title": "Ideal Growing Conditions",
             "message": f"Weather in {location} is looking good for {crop} — {desc}, {temp}°C, {hum}% humidity. Keep up your routine care.",
             "action": None, "time": now,
@@ -1152,16 +1152,16 @@ if "farmer_data" not in st.session_state:
 #   SIDEBAR
 # ============================================================
 with st.sidebar:
-    st.markdown("## 🌿 AgroScan")
+    st.markdown("## AgroScan")
     st.markdown("---")
 
     nav = None
     if st.session_state.farmer_data:
         f = st.session_state.farmer_data
-        st.markdown(f"### 👤 {f['username']}")
+        st.markdown(f"### {f['username']}")
         st.markdown(f"**ID:** `{f['farmer_id']}`")
-        st.markdown(f"📍 {f['location']}")
-        st.markdown(f"🌱 **Current Crop:** {CROP_EMOJI.get(f['main_crop'],'')} {f['main_crop']} · {f['farm_size']} acres")
+        st.markdown(f"{f['location']}")
+        st.markdown(f"**Current Crop:** {CROP_EMOJI.get(f['main_crop'],'')} {f['main_crop']} · {f['farm_size']} acres")
 
         st.markdown("**Switch Crop:**")
         crops_list = ["Rice", "Tomato", "Potato", "Wheat"]
@@ -1172,7 +1172,7 @@ with st.sidebar:
             label_visibility="collapsed", key="crop_switcher"
         )
         if new_crop != f["main_crop"]:
-            if st.button(f"✅ Switch to {CROP_EMOJI.get(new_crop,'')} {new_crop}", use_container_width=True):
+            if st.button(f"Switch to {CROP_EMOJI.get(new_crop,'')} {new_crop}", use_container_width=True):
                 update_farmer_crop(new_crop)
                 st.success(f"Switched to {new_crop}!")
                 st.rerun()
@@ -1188,30 +1188,30 @@ with st.sidebar:
             <div style='background:#FFEBEE;border-radius:10px;padding:12px 14px;
                         margin-bottom:4px;border:1.5px solid #C62828;border-left:5px solid #C62828;'>
               <div class="sidebar-alert-crit" style='font-size:17px;font-weight:700;'>
-                🔔 {_n_count} Active Alert{'s' if _n_count>1 else ''}
+                {_n_count} Active Alert{'s' if _n_count>1 else ''}
               </div>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("🔔 Tap Notifications to view", key="sidebar_notif_btn", use_container_width=True):
-                st.session_state["nav_override"] = "🔔 Notifications"
+            if st.button("Tap Notifications to view", key="sidebar_notif_btn", use_container_width=True):
+                st.session_state["nav_override"] = "Notifications"
                 st.rerun()
         else:
             st.markdown("""
             <div style='background:#1B5E20;border-radius:10px;padding:10px 14px;
                         margin-bottom:12px;border:1.5px solid #4CAF50;border-left:5px solid #4CAF50;'>
-              <div class="sidebar-alert-good" style='font-size:17px;font-weight:800;'>✅ No active alerts</div>
+              <div class="sidebar-alert-good" style='font-size:17px;font-weight:800;'>No active alerts</div>
             </div>
             """, unsafe_allow_html=True)
 
         nav = st.radio(
             "Navigation",
-            ["🏠 Dashboard", "🔬 Disease Detection", "🌧 Irrigation Advisor",
-             "🔔 Notifications", "🤖 Agro Chatbot", "📋 Scan History",
-             "💧 Irrigation History", "👨‍🌾 My Profile"],
+            ["Dashboard", "Disease Detection", "Irrigation Advisor",
+             "Notifications", "Agro Chatbot", "Scan History",
+             "Irrigation History", "My Profile"],
             label_visibility="collapsed"
         )
         st.markdown("---")
-        if st.button("🚪 Logout", use_container_width=True):
+        if st.button("Logout", use_container_width=True):
             st.session_state.farmer_data = None
             for key in ["scan_history","irr_history","chat_history","selected_crop","nav_override"]:
                 st.session_state.pop(key, None)
@@ -1232,13 +1232,13 @@ if not st.session_state.farmer_data:
     with col_m:
         st.markdown("""
         <div style='text-align:center; padding:32px 0 28px'>
-          <div style='font-size:60px'>🌿</div>
+          <div style='font-size:60px'></div>
           <div style='font-family:Syne,sans-serif; font-size:36px; font-weight:800; color:#110A05; margin-top:8px'>AgroScan</div>
           <div style='font-size:18px; color:#4A3A2A; margin-top:6px; font-weight:600;'>AI-Powered Crop Disease Detection</div>
         </div>
         """, unsafe_allow_html=True)
 
-        tab_reg, tab_login = st.tabs(["📝 New Farmer", "🔑 Existing Farmer"])
+        tab_reg, tab_login = st.tabs(["New Farmer", "Existing Farmer"])
 
         with tab_reg:
             with st.form("register_form"):
@@ -1267,7 +1267,7 @@ if not st.session_state.farmer_data:
                         else:
                             st.session_state.farmer_data = farmer
                             load_farmer_history()
-                            st.success(f"✅ Welcome, {username}! Your ID: {farmer['farmer_id']}")
+                            st.success(f"Welcome, {username}! Your ID: {farmer['farmer_id']}")
                             st.rerun()
 
         with tab_login:
@@ -1286,7 +1286,7 @@ if not st.session_state.farmer_data:
                         else:
                             st.session_state.farmer_data = farmer
                             load_farmer_history()
-                            st.success(f"✅ Welcome back, {farmer['username']}!")
+                            st.success(f"Welcome back, {farmer['username']}!")
                             st.rerun()
     st.stop()
 
@@ -1312,7 +1312,7 @@ if "nav_override" in st.session_state:
 # ============================================================
 #   DASHBOARD
 # ============================================================
-if nav == "🏠 Dashboard":
+if nav == "Dashboard":
     _dw = get_weather(f["location"])
     _dn = generate_weather_notifications(_dw, crop, f["location"]) if _dw else []
     _critical = [n for n in _dn if n["type"] == "critical"]
@@ -1376,13 +1376,13 @@ if nav == "🏠 Dashboard":
     col_w, col_h = st.columns([1.3, 1])
 
     with col_w:
-        st.markdown('<div class="section-head">🌤 Live Weather & Disease Alerts</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-head">Live Weather & Disease Alerts</div>', unsafe_allow_html=True)
         weather = get_weather(f["location"])
         if weather:
-            w_icon = {"Rain":"🌧","Clouds":"☁️","Clear":"☀️","Thunderstorm":"⛈️","Drizzle":"🌦️","Mist":"🌫️"}.get(weather["icon"], "🌡️")
+            w_icon = {"Rain":"","Clouds":"","Clear":"","Thunderstorm":"","Drizzle":"","Mist":""}.get(weather["icon"], "")
             st.markdown(f"""
             <div class="weather-card">
-              <div class="wc-city">📍 {weather['city']}</div>
+              <div class="wc-city">{weather['city']}</div>
               <div style="display:flex; align-items:center; gap:18px; margin-bottom:8px">
                 <div style="font-size:58px; filter: drop-shadow(0px 2px 6px rgba(0,0,0,0.25));">{w_icon}</div>
                 <div>
@@ -1391,27 +1391,27 @@ if nav == "🏠 Dashboard":
                 </div>
               </div>
               <div class="wc-stats">
-                <span>💧 {weather['humidity']}% humidity</span>
-                <span>💨 {weather['wind']} m/s wind</span>
-                <span>🌧 {weather['rain']} mm rain</span>
+                <span>{weather['humidity']}% humidity</span>
+                <span>{weather['wind']} m/s wind</span>
+                <span>{weather['rain']} mm rain</span>
               </div>
             </div>
             """, unsafe_allow_html=True)
-            st.markdown("<b style='font-size:17px; color:#110A05; display:block; margin-bottom:6px;'>🔍 Weather-based Disease Risk:</b>", unsafe_allow_html=True)
+            st.markdown("<b style='font-size:17px; color:#110A05; display:block; margin-bottom:6px;'>Weather-based Disease Risk:</b>", unsafe_allow_html=True)
             risks = weather_disease_risk(weather, crop)
             for level, msg in risks:
                 cls  = {"high":"risk-high","med":"risk-med","low":"risk-low"}.get(level,"risk-low")
-                icon = {"high":"🔴","med":"🟡","low":"🟢"}.get(level,"🟢")
+                icon = {"high":"","med":"","low":""}.get(level,"")
                 st.markdown(f'<div class="risk-badge {cls}">{icon} {msg}</div>', unsafe_allow_html=True)
         else:
-            st.info("🌤 Weather data unavailable. Please check your internet connection or city name.")
+            st.info("Weather data unavailable. Please check your internet connection or city name.")
 
     with col_h:
-        st.markdown('<div class="section-head">📜 Recent Scans</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-head">Recent Scans</div>', unsafe_allow_html=True)
         if scan_hist:
             for h in scan_hist[:5]:
                 color = "#C62828" if h["prediction_result"] != "Healthy" else "#2E7D32"
-                emoji = CROP_EMOJI.get(h["crop_type"], "🌱")
+                emoji = CROP_EMOJI.get(h["crop_type"], "")
                 conf  = f"{h['confidence']:.0f}%" if h.get("confidence") else ""
                 st.markdown(f"""
                 <div class="scan-item" style="border-left: 5px solid {color}">
@@ -1420,19 +1420,19 @@ if nav == "🏠 Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("No scans yet. Go to 🔬 Disease Detection to start!")
+            st.info("No scans yet. Go to Disease Detection to start!")
 
 
 # ============================================================
 #   DISEASE DETECTION
 # ============================================================
-elif nav == "🔬 Disease Detection":
-    st.markdown('<div class="section-head">🔬 Disease Detection</div>', unsafe_allow_html=True)
+elif nav == "Disease Detection":
+    st.markdown('<div class="section-head">Disease Detection</div>', unsafe_allow_html=True)
 
     st.markdown("""
     <div style='font-size:16px; font-weight:700; color:#110A05;
                 text-transform:uppercase; letter-spacing:.07em; margin-bottom:12px'>
-        🌱 Select crop to scan
+        Select crop to scan
     </div>
     """, unsafe_allow_html=True)
 
@@ -1451,7 +1451,7 @@ elif nav == "🔬 Disease Detection":
                             box-shadow:0 4px 12px rgba(45,106,45,0.3)'>
                   <div style='font-size:32px'>{CROP_EMOJI.get(c,'')}</div>
                   <div style='font-size:17px; font-weight:700; color:#ffffff; margin-top:4px'>{c}</div>
-                  <div style='font-size:13px; color:rgba(255,255,255,0.85); margin-top:2px'>✓ Active</div>
+                  <div style='font-size:13px; color:rgba(255,255,255,0.85); margin-top:2px'>Active</div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
@@ -1472,12 +1472,12 @@ elif nav == "🔬 Disease Detection":
     col_up, col_res = st.columns([1, 1.3], gap="large")
 
     with col_up:
-        st.markdown("#### 📷 Upload Leaf Image")
+        st.markdown("#### Upload Leaf Image")
         uploaded   = st.file_uploader("Choose a leaf photo", type=["jpg","jpeg","png"])
         st.markdown("**— or take a photo —**")
         camera_img = st.camera_input("Open camera")
         st.markdown("---")
-        scan_btn = st.button("🔍 Detect Disease", use_container_width=True)
+        scan_btn = st.button("Detect Disease", use_container_width=True)
 
     with col_res:
         img_source = uploaded if uploaded else camera_img
@@ -1496,7 +1496,7 @@ elif nav == "🔬 Disease Detection":
                         add_scan_record(crop, label, conf)
 
                         sev      = SEVERITY.get(label, "med")
-                        sev_icon = {"high":"🔴","med":"🟡","healthy":"🟢"}.get(sev,"🟡")
+                        sev_icon = {"high":"","med":"","healthy":""}.get(sev,"")
 
                         st.markdown(f"""
                         <div class="disease-banner {sev}">
@@ -1537,36 +1537,36 @@ elif nav == "🔬 Disease Detection":
                         if label == "Healthy":
                             st.markdown(f"""
                             <div class="healthy-box">
-                              <h4>✅ {info.get('status', 'Plant is healthy.')}</h4>
+                              <h4>{info.get('status', 'Plant is healthy.')}</h4>
                               <ul>{''.join(f"<li>{t}</li>" for t in info.get('maintenance_tips', []))}</ul>
                             </div>
                             """, unsafe_allow_html=True)
                         else:
-                            t1, t2, t3 = st.tabs(["🦠 Causes", "💊 Treatment", "🛡 Prevention"])
+                            t1, t2, t3 = st.tabs(["Causes", "Treatment", "Prevention"])
                             with t1:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4>🦠 Root Causes of {label}</h4>
+                                  <h4>Root Causes of {label}</h4>
                                   <ul>{''.join(f"<li>{c}</li>" for c in info.get('causes',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
                             with t2:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4>💊 Treatment Plan</h4>
+                                  <h4>Treatment Plan</h4>
                                   <ul>{''.join(f"<li>{t}</li>" for t in info.get('treatment',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
                             with t3:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4>🛡 Prevention Tips</h4>
+                                  <h4>Prevention Tips</h4>
                                   <ul>{''.join(f"<li>{p}</li>" for p in info.get('prevention',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
 
-                        st.success("✅ Scan result saved to your history!")
+                        st.success("Scan result saved to your history!")
 
 
 # ============================================================
 #   IRRIGATION ADVISOR
 # ============================================================
-elif nav == "🌧 Irrigation Advisor":
-    st.markdown(f'<div class="section-head">🌧 Automated Live Irrigation Advisor — {CROP_EMOJI.get(crop,"")} {crop}</div>', unsafe_allow_html=True)
+elif nav == "Irrigation Advisor":
+    st.markdown(f'<div class="section-head">Automated Live Irrigation Advisor — {CROP_EMOJI.get(crop,"")} {crop}</div>', unsafe_allow_html=True)
 
     weather = get_weather(f["location"])
     if weather:
@@ -1580,7 +1580,7 @@ elif nav == "🌧 Irrigation Advisor":
         st.markdown("""
         <div style='background:#0D47A1; border-radius:12px; padding:16px 20px; margin-bottom:22px; border:1.5px solid #1565C0'>
           <span style='font-size:17px; color:#ffffff; font-weight:600'>
-            ✅ Live Automation Active! Field metrics have been automatically synced using real-time local weather feeds for <b>{}</b>. No manual adjustments required.
+            Live Automation Active! Field metrics have been automatically synced using real-time local weather feeds for <b>{}</b>. No manual adjustments required.
           </span>
         </div>
         """.format(f['location']), unsafe_allow_html=True)
@@ -1588,30 +1588,30 @@ elif nav == "🌧 Irrigation Advisor":
         col_in, col_out = st.columns([1, 1.2], gap="large")
 
         with col_in:
-            st.markdown("#### ⚙️ Synced Field Environmental Metrics")
+            st.markdown("#### Synced Field Environmental Metrics")
             st.markdown("""
             <div style='background:#ffffff; border-radius:14px; padding:22px 24px; margin-bottom:16px;
                         border:1.5px solid #C8BFAF; box-shadow:0 4px 12px rgba(0,0,0,0.05)'>
               <div style='font-size:14px; color:#4A3A2A; text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px; font-weight:700;'>Real-time Metrics</div>
               <div style='display:flex; flex-direction:column; gap:14px'>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#4A3A2A; font-weight:600;'>📍 Location</span>
+                  <span style='font-size:16px; color:#4A3A2A; font-weight:600;'>Location</span>
                   <b style='font-size:17px; color:#110A05'>{}</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#1565C0; font-weight:600;'>🌧 Live Rainfall</span>
+                  <span style='font-size:16px; color:#1565C0; font-weight:600;'>Live Rainfall</span>
                   <b style='font-size:18px; color:#1565C0'>{} mm</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#E65100; font-weight:600;'>🌡️ Live Temperature</span>
+                  <span style='font-size:16px; color:#E65100; font-weight:600;'>Live Temperature</span>
                   <b style='font-size:18px; color:#E65100'>{}°C</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#5D4037; font-weight:600;'>🪨 Soil Context</span>
+                  <span style='font-size:16px; color:#5D4037; font-weight:600;'>Soil Context</span>
                   <b style='font-size:18px; color:#5D4037'>{} Context</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center;'>
-                  <span style='font-size:16px; color:#2E7D32; font-weight:600;'>🌱 Target Crop</span>
+                  <span style='font-size:16px; color:#2E7D32; font-weight:600;'>Target Crop</span>
                   <b style='font-size:18px; color:#2E7D32'>{}</b>
                 </div>
               </div>
@@ -1619,7 +1619,7 @@ elif nav == "🌧 Irrigation Advisor":
             """.format(f['location'], rainfall, temperature, soil_type, crop), unsafe_allow_html=True)
 
         with col_out:
-            st.markdown("#### 💧 Smart Irrigation Advisories")
+            st.markdown("#### Smart Irrigation Advisories")
             for rec in recs[:-1]:
                 st.markdown("""
                 <div class="irr-card">
@@ -1641,7 +1641,7 @@ elif nav == "🌧 Irrigation Advisor":
     else:
         st.markdown("""
         <div style='background:#FFF3E0; border-radius:14px; padding:32px; border:1.5px solid #FFCC80; text-align:center'>
-          <div style='font-size:44px; margin-bottom:12px'>🌤</div>
+          <div style='font-size:44px; margin-bottom:12px'></div>
           <div style='font-family:Syne,sans-serif; font-size:18px; font-weight:700; color:#E65100'>Weather Connection Offline</div>
           <div style='font-size:16px; color:#4A3A2A; margin-top:8px; font-weight:600;'>Unable to automate irrigation parameters. Please ensure your OpenWeatherMap API Key is configured properly inside app.py.</div>
         </div>
@@ -1651,11 +1651,11 @@ elif nav == "🌧 Irrigation Advisor":
 # ============================================================
 #   SCAN HISTORY
 # ============================================================
-elif nav == "📋 Scan History":
-    st.markdown('<div class="section-head">📋 Disease Scan History</div>', unsafe_allow_html=True)
+elif nav == "Scan History":
+    st.markdown('<div class="section-head">Disease Scan History</div>', unsafe_allow_html=True)
     history = st.session_state.get("scan_history", [])
     if not history:
-        st.info("No disease scans yet. Go to 🔬 Disease Detection to start!")
+        st.info("No disease scans yet. Go to Disease Detection to start!")
     else:
         import pandas as pd
         df = pd.DataFrame(history)
@@ -1669,14 +1669,14 @@ elif nav == "📋 Scan History":
 # ============================================================
 #   IRRIGATION HISTORY
 # ============================================================
-elif nav == "💧 Irrigation History":
-    st.markdown('<div class="section-head">💧 Irrigation Recommendation History</div>', unsafe_allow_html=True)
+elif nav == "Irrigation History":
+    st.markdown('<div class="section-head">Irrigation Recommendation History</div>', unsafe_allow_html=True)
     irr_hist = st.session_state.get("irr_history", [])
     if not irr_hist:
-        st.info("No irrigation recommendations yet. Go to 🌧 Irrigation Advisor to get started!")
+        st.info("No irrigation recommendations yet. Go to Irrigation Advisor to get started!")
     else:
         for log in irr_hist:
-            with st.expander(f"📅 {log['log_date']}  |  {log['crop_type']}  |  🌧 {log['rainfall']}mm  |  🌡 {log['temperature']}°C  |  Soil: {log['soil_type']}"):
+            with st.expander(f"{log['log_date']}  |  {log['crop_type']}  |  {log['rainfall']}mm  |  {log['temperature']}°C  |  Soil: {log['soil_type']}"):
                 for line in log["recommendation"].split("\n"):
                     if line.strip():
                         st.markdown(f"- {line}")
@@ -1685,15 +1685,15 @@ elif nav == "💧 Irrigation History":
 # ============================================================
 #   MY PROFILE
 # ============================================================
-elif nav == "👨‍🌾 My Profile":
-    st.markdown('<div class="section-head">👨‍🌾 My Profile</div>', unsafe_allow_html=True)
+elif nav == "My Profile":
+    st.markdown('<div class="section-head">My Profile</div>', unsafe_allow_html=True)
     st.markdown(f"""
     <div style='background:#fff;border-radius:16px;padding:24px;border:1.5px solid #C8BFAF'>
-      <div style='font-size:32px;margin-bottom:12px'>👤</div>
+      <div style='font-size:32px;margin-bottom:12px'></div>
       <div style='font-family:Syne,sans-serif;font-size:22px;font-weight:700;color:#110A05'>{f['username']}</div>
       <div style='margin-top:14px;display:flex;flex-direction:column;gap:10px'>
-        <div style='font-size:17px;color:#110A05;font-weight:500;'>📍 Location: <b>{f['location']}</b></div>
-        <div style='font-size:17px;color:#110A05;font-weight:500;'>🌾 Farm size: <b>{f['farm_size']} acres</b></div>
+        <div style='font-size:17px;color:#110A05;font-weight:500;'>Location: <b>{f['location']}</b></div>
+        <div style='font-size:17px;color:#110A05;font-weight:500;'>Farm size: <b>{f['farm_size']} acres</b></div>
         <div style='font-size:17px;color:#110A05;font-weight:500;'>{CROP_EMOJI.get(f['main_crop'],'')} Crop: <b>{f['main_crop']}</b></div>
       </div>
     </div>
@@ -1702,8 +1702,8 @@ elif nav == "👨‍🌾 My Profile":
 # ============================================================
 #   NOTIFICATIONS PAGE
 # ============================================================
-elif nav == "🔔 Notifications":
-    st.markdown('<div class="section-head">🔔 Weather Notifications & Alerts</div>', unsafe_allow_html=True)
+elif nav == "Notifications":
+    st.markdown('<div class="section-head">Weather Notifications & Alerts</div>', unsafe_allow_html=True)
 
     weather = get_weather(f["location"])
 
@@ -1711,7 +1711,7 @@ elif nav == "🔔 Notifications":
         st.markdown("""
         <div style='background:#FFF3E0;border-radius:14px;padding:24px;
                     border:1.5px solid #FFCC80;text-align:center'>
-          <div style='font-size:40px;margin-bottom:12px'>🌤</div>
+          <div style='font-size:40px;margin-bottom:12px'></div>
           <div style='font-family:Syne,sans-serif;font-size:18px;font-weight:700;color:#E65100'>
             Weather API Not Connected
           </div>
@@ -1727,11 +1727,11 @@ elif nav == "🔔 Notifications":
         info     = [n for n in notifications if n["type"] == "info"]
         good     = [n for n in notifications if n["type"] == "good"]
 
-        w_icon = {"Rain":"🌧","Clouds":"☁️","Clear":"☀️","Thunderstorm":"⛈️","Drizzle":"🌦️","Mist":"🌫️"}.get(weather["icon"],"🌡️")
+        w_icon = {"Rain":"","Clouds":"","Clear":"","Thunderstorm":"","Drizzle":"","Mist":""}.get(weather["icon"],"")
         
         st.markdown(f"""
         <div class='weather-card' style='margin-bottom:24px'>
-          <div class='wc-city'>📍 {weather['city']} · Updated at {datetime.now().strftime('%H:%M')}</div>
+          <div class='wc-city'>{weather['city']} · Updated at {datetime.now().strftime('%H:%M')}</div>
           <div style='display:flex;align-items:center;gap:16px;margin-bottom:8px'>
             <div style='font-size:52px'>{w_icon}</div>
             <div>
@@ -1740,9 +1740,9 @@ elif nav == "🔔 Notifications":
             </div>
           </div>
           <div class='wc-stats'>
-            <span>💧 {weather['humidity']}% humidity</span>
-            <span>💨 {weather['wind']} m/s wind</span>
-            <span>🌧 {weather['rain']} mm rain</span>
+            <span>{weather['humidity']}% humidity</span>
+            <span>{weather['wind']} m/s wind</span>
+            <span>{weather['rain']} mm rain</span>
           </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1783,10 +1783,10 @@ elif nav == "🔔 Notifications":
         }
 
         ACTION_MAP = {
-            "Go to Disease Detection": "🔬 Disease Detection",
-            "Scan Your Crop":          "🔬 Disease Detection",
-            "Check Irrigation":        "🌧 Irrigation Advisor",
-            "View Irrigation Advisor": "🌧 Irrigation Advisor",
+            "Go to Disease Detection": "Disease Detection",
+            "Scan Your Crop":          "Disease Detection",
+            "Check Irrigation":        "Irrigation Advisor",
+            "View Irrigation Advisor": "Irrigation Advisor",
         }
 
         if notifications:
@@ -1800,7 +1800,7 @@ elif nav == "🔔 Notifications":
                       <div style='display:flex;justify-content:space-between;align-items:center'>
                         <div style='font-family:Syne,sans-serif;font-size:18px;
                                     font-weight:800;color:{color}'>{n['title']}</div>
-                        <div style='font-size:14px;color:{msg_color};font-weight:600'>🕐 {n['time']}</div>
+                        <div style='font-size:14px;color:{msg_color};font-weight:600'>{n['time']}</div>
                       </div>
                       <div style='font-size:17px;color:{msg_color};margin-top:8px;line-height:1.6;font-weight:500'>
                         {n['message']}
@@ -1812,21 +1812,21 @@ elif nav == "🔔 Notifications":
 
                 if n.get("action"):
                     if st.button(f"→ {n['action']}", key=f"notif_action_{idx}", use_container_width=False):
-                        target = ACTION_MAP.get(n["action"], "🏠 Dashboard")
+                        target = ACTION_MAP.get(n["action"], "Dashboard")
                         st.session_state["nav_override"] = target
                         st.rerun()
 
                 st.markdown("<div style='margin-bottom:10px'></div>", unsafe_allow_html=True)
 
     st.markdown("---")
-    if st.button("🔄 Refresh Weather Alerts", use_container_width=True):
+    if st.button("Refresh Weather Alerts", use_container_width=True):
         st.rerun()
 
 
 # ============================================================
 #   AGRO CHATBOT PAGE
 # ============================================================
-elif nav == "🤖 Agro Chatbot":
+elif nav == "Agro Chatbot":
 
     try:
         sys.path.insert(0, os.path.join(BASE_DIR, "chatbot"))
@@ -1891,23 +1891,23 @@ elif nav == "🤖 Agro Chatbot":
         return "response"
 
     TYPE_META = {
-        "greeting":   ("👋", "#4CAF50",  "#E8F5E9"),
-        "symptoms":   ("🔍", "#7B1FA2",  "#F3E5F5"),
-        "causes":     ("⚠️",  "#E65100",  "#FFF3E0"),
-        "treatment":  ("💊", "#1565C0",  "#E3F2FD"),
-        "prevention": ("🛡️",  "#2E7D32",  "#E8F5E9"),
-        "irrigation": ("💧", "#0277BD",  "#E1F5FE"),
-        "fertilizer": ("🌱", "#5D4037",  "#EFEBE9"),
-        "weather":    ("🌤️",  "#00838F",  "#E0F7FA"),
-        "harvest":    ("🌾", "#F57F17",  "#FFF8E1"),
-        "response":   ("🌿", "#2D6A2D",  "#F1F8E9"),
+        "greeting":   ("", "#4CAF50",  "#E8F5E9"),
+        "symptoms":   ("", "#7B1FA2",  "#F3E5F5"),
+        "causes":     ("",  "#E65100",  "#FFF3E0"),
+        "treatment":  ("", "#1565C0",  "#E3F2FD"),
+        "prevention": ("",  "#2E7D32",  "#E8F5E9"),
+        "irrigation": ("", "#0277BD",  "#E1F5FE"),
+        "fertilizer": ("", "#5D4037",  "#EFEBE9"),
+        "weather":    ("",  "#00838F",  "#E0F7FA"),
+        "harvest":    ("", "#F57F17",  "#FFF8E1"),
+        "response":   ("", "#2D6A2D",  "#F1F8E9"),
     }
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
         st.session_state.chat_history.append({
             "role": "bot",
-            "text": f"🌱 Hello {f['username']}! I am AgroScan Agricultural Assistant.\n\nI can help you with:\n\n- Crop Diseases\n- Disease Symptoms\n- Disease Treatment\n- Irrigation Guidance\n- Weather Conditions\n- Crop Management\n\nSupported Crops:\n\n- Wheat\n- Rice\n- Potato\n- Tomato",
+            "text": f"Hello {f['username']}! I am AgroScan Agricultural Assistant.\n\nI can help you with:\n\n- Crop Diseases\n- Disease Symptoms\n- Disease Treatment\n- Irrigation Guidance\n- Weather Conditions\n- Crop Management\n\nSupported Crops:\n\n- Wheat\n- Rice\n- Potato\n- Tomato",
             "type": "greeting"
         })
 
@@ -1918,7 +1918,7 @@ elif nav == "🤖 Agro Chatbot":
       <div style='width:52px;height:52px;border-radius:50%;
                   background:rgba(255,255,255,0.15);
                   display:flex;align-items:center;justify-content:center;font-size:26px;'>
-        🌿
+        
       </div>
       <div style='flex:1'>
         <div style='font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#ffffff;'>
@@ -1940,15 +1940,15 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
-       💬 Quick Questions
+       Quick Questions
     </div>
     """, unsafe_allow_html=True)
 
     suggestions = [
-        ("🌾", "Rice"),
-        ("🌿", "Wheat"),
-        ("🍅", "Tomato"),
-        ("🥔", "Potato"),
+        ("", "Rice"),
+        ("", "Wheat"),
+        ("", "Tomato"),
+        ("", "Potato"),
     ]
     sug_cols = st.columns(4)
     for i, (icon, sug) in enumerate(suggestions):
@@ -1971,7 +1971,7 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
-        🗨️ Conversation
+        Conversation
     </div>
     """, unsafe_allow_html=True)
 
@@ -1992,7 +1992,7 @@ elif nav == "🤖 Agro Chatbot":
                             display:flex;align-items:center;
                             justify-content:center;font-size:14px;
                             box-shadow:0 2px 6px rgba(0,0,0,0.15);'>
-                  👤
+                  
                 </div>
               </div>
             </div>
@@ -2032,7 +2032,7 @@ elif nav == "🤖 Agro Chatbot":
                 label_visibility="collapsed"
             )
         with col_send:
-            send_btn = st.form_submit_button("Send 📨", use_container_width=True)
+            send_btn = st.form_submit_button("Send ", use_container_width=True)
 
         if send_btn and user_input.strip():
             msg_text = user_input.strip()
@@ -2054,7 +2054,7 @@ elif nav == "🤖 Agro Chatbot":
     col_clr, col_sp = st.columns([1, 4])
     with col_clr:
         if st.session_state.chat_history:
-            if st.button("🗑 Clear", key="clear_chat", use_container_width=True):
+            if st.button("Clear", key="clear_chat", use_container_width=True):
                 st.session_state.chat_history = []
                 st.rerun()
 
@@ -2063,17 +2063,17 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;'>
-        🌱 What I Can Help With
+        What I Can Help With
     </div>
     """, unsafe_allow_html=True)
 
     capabilities = [
-        ("🦠", "#C62828", "Disease Info",    "Symptoms, causes, treatment & prevention"),
-        ("💧", "#0277BD", "Irrigation",      "Water requirements & irrigation methods"),
-        ("🌱", "#5D4037", "Fertilizer",      "NPK & nutrient recommendations per crop"),
-        ("🌤", "#00838F", "Weather",         "Best climate & temperature conditions"),
-        ("🌾", "#F57F17", "Harvest Tips",    "When and how to harvest each crop"),
-        ("🌍", "#2E7D32", "Soil & Farming",  "Soil types and cultivation guidance"),
+        ("", "#C62828", "Disease Info",    "Symptoms, causes, treatment & prevention"),
+        ("", "#0277BD", "Irrigation",      "Water requirements & irrigation methods"),
+        ("", "#5D4037", "Fertilizer",      "NPK & nutrient recommendations per crop"),
+        ("", "#00838F", "Weather",         "Best climate & temperature conditions"),
+        ("", "#F57F17", "Harvest Tips",    "When and how to harvest each crop"),
+        ("", "#2E7D32", "Soil & Farming",  "Soil types and cultivation guidance"),
     ]
     cap_cols = st.columns(3)
     for i, (icon, color, title, desc) in enumerate(capabilities):
