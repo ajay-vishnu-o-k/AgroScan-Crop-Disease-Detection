@@ -640,9 +640,6 @@ def load_farmer_history():
         st.session_state.irr_history  = []
 
 
-# ============================================================
-#   MODEL LOADER
-# ============================================================
 @st.cache_resource(show_spinner="Loading AI model…")
 def load_model(crop: str):
     path = MODEL_PATHS[crop]
@@ -650,7 +647,7 @@ def load_model(crop: str):
         st.error(f"Model file not found: {path}")
         return None
 
-    # Gather clean dynamic functional dictionary objects mapping overrides
+    # Standard custom mapping dictionary for legacy engines
     custom_map = {}
     try:
         import keras.engine.functional as legacy_funct
@@ -662,57 +659,45 @@ def load_model(crop: str):
         except ImportError:
             pass
 
-    # Try standard model load loop
+    # Strategy A: Attempt a native full-model architectural load
     try:
         return tf.keras.models.load_model(path, compile=False, custom_objects=custom_map)
     except Exception:
         pass
 
-    # For .keras format — unzip package stream and execute target JSON structural adjustments
-    if path.endswith(".keras"):
-        try:
-            import zipfile
-            import tempfile
-            import json
-
-            with tempfile.TemporaryDirectory() as tmpdir:
-                with zipfile.ZipFile(path, "r") as z:
-                    z.extractall(tmpdir)
-
-                config_path = os.path.join(tmpdir, "config.json")
-                weights_path = os.path.join(tmpdir, "model.weights.h5")
-
-                if os.path.exists(config_path):
-                    with open(config_path, "r") as cf:
-                        raw_config = cf.read()
-                    
-                    patched_config = raw_config.replace("keras.src.models.functional", "keras.src.engine.functional")
-                    config = json.loads(patched_config)
-
-                    # Strip cross-version metrics before compiling internal matrices
-                    sanitize_keras_config(config)
-
-                    model = tf.keras.models.model_from_json(
-                        json.dumps(config),
-                        custom_objects=custom_map
-                    )
-                    if os.path.exists(weights_path):
-                        model.load_weights(weights_path)
-                    return model
-        except Exception:
-            pass
-
-    # Fallback secondary layout recovery reload strategy
+    # Strategy B: Fallback to Weights-Only Loading if metadata is corrupted/mismatched
     try:
-        return tf.keras.models.load_model(
-            path,
-            compile=False,
-            custom_objects=custom_map
+        # 1. Rebuild the standard base architecture platform programmatically
+        base_model = tf.keras.applications.MobileNetV2(
+            input_shape=(224, 224, 3), 
+            include_top=False, 
+            weights=None
         )
+        x = base_model.output
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+        
+        # 2. Match your target classification class vector dimensions (3 outputs)
+        num_classes = len(CLASS_LABELS.get(crop, ["Class1", "Class2", "Class3"]))
+        outputs = tf.keras.layers.Dense(num_classes, activation="softmax")(x)
+        
+        # 3. Construct the network graph container
+        model = tf.keras.models.Model(inputs=base_model.input, outputs=outputs)
+        
+        # 4. Map the raw h5 tensor matrices directly onto the custom layers
+        try:
+            model.load_weights(path)
+        except Exception:
+            # Updated: Fallback path to search for the mandatory Keras 3 extension name
+            weights_path = path.replace("wheat_disease_finetuned_model.h5", "wheat_weights.weights.h5")
+            if os.path.exists(weights_path):
+                model.load_weights(weights_path)
+            else:
+                raise ValueError("Could not map structural weights matrix. Ensure wheat_weights.weights.h5 is in the directory.")
+                
+        return model
     except Exception as e:
-        st.error(f"Model load error for {crop}: {str(e)}")
+        st.error(f"Critical Model Load Error for {crop}: {str(e)}")
         return None
-
 def predict(model, img_pil, crop: str):
     img  = img_pil.convert("RGB").resize((224, 224))
     arr  = np.array(img, dtype=np.float32) / 255.0
