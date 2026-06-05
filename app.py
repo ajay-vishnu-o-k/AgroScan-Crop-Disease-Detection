@@ -638,8 +638,27 @@ def load_model(crop: str):
             st.error(f"SavedModel Graph Load Failure for {crop}: {str(e)}")
             return None
 
+    def PatchedInputLayer(*args, **kwargs):
+        if "batch_shape" in kwargs:
+            kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
+        if "optional" in kwargs:
+            kwargs.pop("optional")
+        if "data_format" in kwargs:
+            kwargs.pop("data_format")
+        try:
+            from tensorflow.keras.layers import InputLayer
+        except ImportError:
+            try:
+                from keras.layers import InputLayer
+            except ImportError:
+                import tensorflow as tf
+                InputLayer = tf.keras.layers.InputLayer
+        return InputLayer(*args, **kwargs)
+
     # Custom mapping dictionary for standard legacy .h5 single files
-    custom_map = {}
+    custom_map = {
+        "InputLayer": PatchedInputLayer
+    }
     try:
         import keras.src.engine.functional as legacy_src_funct
         custom_map["Functional"] = legacy_src_funct.Functional

@@ -407,6 +407,42 @@
       {
         "crop_type": "Wheat",
         "prediction_result": "Healthy",
+        "confidence": 93.937748670578,
+        "scan_date": "2026-06-05 15:24"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 93.937748670578,
+        "scan_date": "2026-06-05 15:15"
+      },
+      {
+        "crop_type": "Rice",
+        "prediction_result": "Bacterial Leaf Blight",
+        "confidence": 99.99644756317139,
+        "scan_date": "2026-06-05 15:04"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 33.719637989997864,
+        "scan_date": "2026-06-05 14:53"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 98.82015585899353,
+        "scan_date": "2026-06-05 14:28"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 98.82015585899353,
+        "scan_date": "2026-06-05 14:15"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
         "confidence": 98.82015585899353,
         "scan_date": "2026-06-05 13:03"
       },
@@ -520,6 +556,46 @@
         "prediction_result": "Healthy",
         "confidence": 99.04554486274719,
         "scan_date": "2026-06-04 10:23"
+      }
+    ]
+  },
+  "FRM-3F9A30": {
+    "farmer_id": "FRM-3F9A30",
+    "username": "agroscantest",
+    "location": "Test City",
+    "farm_size": "2.005",
+    "main_crop": "Potato",
+    "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+    "created_at": "2026-06-05 15:26",
+    "scan_history": [
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Yellow Rust",
+        "confidence": 95.51020860671997,
+        "scan_date": "2026-06-05 15:30"
+      },
+      {
+        "crop_type": "Potato",
+        "prediction_result": "Healthy",
+        "confidence": 100.0,
+        "scan_date": "2026-06-05 15:28"
+      }
+    ]
+  },
+  "FRM-ADEBE2": {
+    "farmer_id": "FRM-ADEBE2",
+    "username": "Test Farmer",
+    "location": "Test Village",
+    "farm_size": "2.005",
+    "main_crop": "Potato",
+    "password": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    "created_at": "2026-06-05 15:35",
+    "scan_history": [
+      {
+        "crop_type": "Potato",
+        "prediction_result": "Healthy",
+        "confidence": 100.0,
+        "scan_date": "2026-06-05 15:37"
       }
     ]
   }
