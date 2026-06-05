@@ -13,13 +13,10 @@ warnings.filterwarnings("ignore")
 tf.get_logger().setLevel("ERROR")
 
 # ─── GLOBAL DEEP LEARNING MODEL CONFIGURATION INTERCEPTOR ───
-# This patches Keras's deserialization loop globally to safely strip modern
-# Keras 3 graph signatures before they hit the legacy Keras 2 constructor engines.
 import keras
 
 def sanitize_keras_config(d):
     if isinstance(d, dict):
-        # 1. Sanitize input and preprocessing layer parameter dictionaries
         if "config" in d and isinstance(d["config"], dict):
             cfg = d["config"]
             if "batch_shape" in cfg:
@@ -28,7 +25,6 @@ def sanitize_keras_config(d):
                 cfg.pop("optional")
             if "data_format" in cfg:
                 cfg.pop("data_format")
-            # Flatten Keras 3 complex DTypePolicy objects into a legacy string name
             if "dtype" in cfg and isinstance(cfg["dtype"], dict):
                 cfg["dtype"] = cfg["dtype"].get("config", {}).get("name", "float32")
 
@@ -41,7 +37,6 @@ def sanitize_keras_config(d):
         if "dtype" in d and isinstance(d["dtype"], dict):
             d["dtype"] = d["dtype"].get("config", {}).get("name", "float32")
             
-        # 2. Re-route functional model structural definitions smoothly
         if d.get("module") == "keras.src.models.functional" or d.get("class_name") == "Functional":
             d["class_name"] = "Functional"
             try:
@@ -56,7 +51,6 @@ def sanitize_keras_config(d):
         for item in d:
             sanitize_keras_config(item)
 
-# Bind the sanitizer hook into all available Keras layer object deserialization routines
 if hasattr(keras.layers, "deserialize"):
     original_layers_deserialize = keras.layers.deserialize
     def patched_layers_deserialize(config, custom_objects=None):
@@ -105,7 +99,7 @@ MODEL_PATHS = {
     "Rice":   os.path.join(BASE_DIR, "rice_model.h5"),
     "Tomato": os.path.join(BASE_DIR, "tomato_model.h5"),
     "Potato": os.path.join(BASE_DIR, "potato_model.h5"),
-    "Wheat":  os.path.join(BASE_DIR, "wheat_disease_finetuned_model.h5"),
+    "Wheat":  os.path.join(BASE_DIR, "wheat_saved_model"), # Points directly to SavedModel folder
 }
 
 CLASS_LABELS = {
@@ -117,7 +111,6 @@ CLASS_LABELS = {
 
 CROP_EMOJI = {"Rice":"🌾", "Tomato":"🍅", "Potato":"🥔", "Wheat":"🌿"}
 
-# ─── WEATHER API KEY ────────────────────────────────────────
 OWM_API_KEY = "4f81d79be632f9cbe6a92458c47efa2f"
 
 # ============================================================
@@ -127,7 +120,6 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-/* ── Custom App-Wide Scrollbars ── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: #F8F5EF; }
 ::-webkit-scrollbar-thumb { background: #C8C0B0; border-radius: 4px; }
@@ -142,13 +134,11 @@ html, body, [class*="css"], p, span, div, label {
     font-size: 15px;
 }
 
-/* General text size boost — only size, NOT color, to avoid overriding white-on-dark areas */
 p, li {
     font-size: 15px !important;
     line-height: 1.6 !important;
 }
 
-/* ── Main background ── */
 .main .block-container {
     background: #F8F5EF;
     padding-top: 1rem;
@@ -158,7 +148,6 @@ p, li {
     padding-right: 1.5rem;
 }
 
-/* ── Sidebar ── */
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #1B3A1B 0%, #2D4A1E 100%) !important;
 }
@@ -221,7 +210,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     font-size: 17px !important;
 }
 
-/* ── Card Lift Micro-Interactions ── */
 .metric-card, .scan-item, .info-box, .healthy-box, .irr-card {
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease !important;
 }
@@ -231,7 +219,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     border-color: #A5D6A7 !important;
 }
 
-/* ── Metric cards ── */
 .metric-card {
     background: #ffffff;
     border-radius: 16px;
@@ -262,7 +249,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     margin-top: 4px;
 }
 
-/* ── Section heading ── */
 .section-head {
     font-family: 'Syne', sans-serif;
     font-size: 28px !important;
@@ -273,7 +259,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     margin: 22px 0 16px;
 }
 
-/* ── Disease result banner ── */
 .disease-banner, .conf-wrap, [data-testid="stNotificationContent"] {
     animation: fadeInSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -307,7 +292,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     font-weight: 500;
 }
 
-/* ── Info box ── */
 .info-box {
     background: #ffffff;
     border-radius: 14px;
@@ -325,7 +309,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
 .info-box ul { margin: 0; padding-left: 18px; }
 .info-box li { font-size: 19px !important; line-height: 2 !important; color: #110A05; }
 
-/* ── Healthy tip box ── */
 .healthy-box {
     background: #1B5E20;
     border-radius: 14px;
@@ -345,7 +328,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     color: #ffffff !important;
 }
 
-/* ── Irrigation card ── */
 .irr-card {
     background: #F0F8FF;
     border-radius: 14px;
@@ -362,7 +344,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
 }
 .irr-card p, .irr-card li { font-size: 19px !important; line-height: 2 !important; color: #0D47A1; font-weight: 500; }
 
-/* ── Weather card ── */
 @keyframes auraBreath {
     0%   { background-position: 0% 50%; }
     50%  { background-position: 100% 50%; }
@@ -387,7 +368,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
 .weather-card .wc-stats { display: flex; gap: 24px; margin-top: 18px; font-size: 18px !important; font-weight: 600; border-top: 1px solid rgba(255,255,255,0.18); padding-top: 12px; }
 .weather-card .wc-stats span { font-weight: 600 !important; font-size: 18px !important; }
 
-/* ── Risk badge ── */
 .risk-badge {
     display: inline-block;
     padding: 8px 16px;
@@ -400,11 +380,9 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
 .risk-med  { background: #FFF3E0; color: #E65100; border: 2px solid #E65100; }
 .risk-low  { background: #1B5E20; color: #ffffff;  border: 2px solid #2E7D32; }
 
-/* ── Confidence bar ── */
 .conf-wrap { background: #E8E2D8; border-radius: 8px; height: 12px; overflow: hidden; margin-top: 8px; }
 .conf-fill  { height: 100%; border-radius: 8px; }
 
-/* ── Recent scan item ── */
 .scan-item {
     background: #ffffff;
     border-radius: 12px;
@@ -415,7 +393,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
 .scan-item .si-title { font-size: 19px !important; font-weight: 700; color: #110A05; }
 .scan-item .si-date  { font-size: 16px !important; color: #4A3A2A; margin-top: 4px; }
 
-/* ── Buttons ── */
 .stButton > button {
     background: #2D6A2D !important;
     color: #ffffff !important;
@@ -428,7 +405,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
 }
 .stButton > button:hover { background: #1B4A1B !important; }
 
-/* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] { gap: 6px; }
 .stTabs [data-baseweb="tab"] {
     border-radius: 10px !important;
@@ -452,7 +428,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     font-weight: 800 !important;
 }
 
-/* ── Inputs ── */
 .stTextInput > div > div > input,
 .stNumberInput > div > div > input,
 .stNumberInput input,
@@ -487,10 +462,8 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     font-weight: 700 !important;
 }
 
-/* ── Slider ── */
 .stSlider > div > div > div > div { background: #4CAF50 !important; }
 
-/* ── Upload zone ── */
 [data-testid="stFileUploader"] section {
             background: #ffffff !important;
             border: 2px dashed #2D6A2D !important;
@@ -509,20 +482,12 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
             fill: #2D6A2D !important;
         }
 
-/* ── Dataframe ── */
 .stDataFrame { border-radius: 12px !important; overflow: hidden; }
 [data-testid="stDataFrameResizable"] { color: #110A05 !important; font-size: 18px !important; }
-
-/* ── Alerts ── */
 .stAlert { border-radius: 12px !important; }
-
-/* ── Expander ── */
 .streamlit-expanderHeader { color: #110A05 !important; font-weight: 700 !important; font-size: 19px !important; }
-
-/* ── Radio buttons ── */
 .stRadio > div > label > div { color: #110A05 !important; font-size: 18px !important; }
 
-/* ── Active Crop Soft Glow ── */
 div[data-testid="column"] > div:has(div[style*="background:#2D6A2D"]) {
     box-shadow: 0 0 16px rgba(45, 106, 45, 0.4) !important;
     animation: activePulse 3s ease-in-out infinite;
@@ -640,6 +605,22 @@ def load_farmer_history():
         st.session_state.irr_history  = []
 
 
+# ============================================================
+#   MODEL LOADER (UPDATED WITH TF SAVEDMODEL ADAPTER INTERFACE)
+# ============================================================
+class SavedModelWrapper:
+    """Wraps a low-level TF SavedModel graph to mimic a standard Keras model object."""
+    def __init__(self, path):
+        import tensorflow as tf
+        self.model = tf.saved_model.load(path)
+        self.infer = self.model.signatures["serving_default"]
+        
+    def predict(self, arr, verbose=0):
+        import tensorflow as tf
+        outputs = self.infer(tf.constant(arr))
+        output_key = list(outputs.keys())[0]
+        return outputs[output_key].numpy()
+
 @st.cache_resource(show_spinner="Loading AI model…")
 def load_model(crop: str):
     path = MODEL_PATHS[crop]
@@ -647,10 +628,17 @@ def load_model(crop: str):
         st.error(f"Model file not found: {path}")
         return None
 
-    import keras
     import tensorflow as tf
 
-    # Standard custom mapping dictionary for functional models
+    # Low-Level Graph Loader for Wheat SavedModel Directory
+    if os.path.isdir(path):
+        try:
+            return SavedModelWrapper(path)
+        except Exception as e:
+            st.error(f"SavedModel Graph Load Failure for {crop}: {str(e)}")
+            return None
+
+    # Custom mapping dictionary for standard legacy .h5 single files
     custom_map = {}
     try:
         import keras.src.engine.functional as legacy_src_funct
@@ -658,44 +646,16 @@ def load_model(crop: str):
     except ImportError:
         pass
 
-    # Strategy A: Attempt a native full-model load using standalone Keras 3 engine
     try:
-        return keras.models.load_model(path, compile=False, custom_objects=custom_map)
+        return tf.keras.models.load_model(path, compile=False, custom_objects=custom_map)
     except Exception:
-        pass
-
-    # Strategy B: Fallback to programmatic reconstruction using standalone Keras layers
-    try:
-        # Rebuild using standalone 'keras' to ensure exact layer naming alignment
-        base_model = keras.applications.MobileNetV2(
-            input_shape=(224, 224, 3), 
-            include_top=False, 
-            weights=None
-        )
-        x = base_model.output
-        x = keras.layers.GlobalAveragePooling2D()(x)
-        
-        num_classes = len(CLASS_LABELS.get(crop, ["Class1", "Class2", "Class3"]))
-        outputs = keras.layers.Dense(num_classes, activation="softmax")(x)
-        
-        model = keras.models.Model(inputs=base_model.input, outputs=outputs)
-        
-        # Map the tensor matrices directly onto the synchronized layers
         try:
-            model.load_weights(path)
-        except Exception:
-            # Fallback path if the application is reading the raw Keras 3 weight matrix file
-            weights_path = path.replace("wheat_disease_finetuned_model.h5", "wheat_weights.weights.h5")
-            if os.path.exists(weights_path):
-                model.load_weights(weights_path)
-            else:
-                # Final fallback: force structural name-matching and skip layout discrepancies
-                model.load_weights(path, by_name=True, skip_mismatch=True)
-                
-        return model
-    except Exception as e:
-        st.error(f"Critical Model Load Error for {crop}: {str(e)}")
-        return None
+            import keras
+            return keras.models.load_model(path, compile=False, custom_objects=custom_map)
+        except Exception as e:
+            st.error(f"Model load error for {crop}: {str(e)}")
+            return None
+
 def predict(model, img_pil, crop: str):
     img  = img_pil.convert("RGB").resize((224, 224))
     arr  = np.array(img, dtype=np.float32) / 255.0
@@ -1326,7 +1286,6 @@ crop = f["main_crop"]
 if "scan_history" not in st.session_state or "irr_history" not in st.session_state:
     load_farmer_history()
 
-# ── Nav override from sidebar alert button and notification action buttons ──
 if "nav_override" in st.session_state:
     nav = st.session_state.pop("nav_override")
 
@@ -1698,7 +1657,6 @@ elif nav == "💧 Irrigation History":
         st.info("No irrigation recommendations yet. Go to 🌧 Irrigation Advisor to get started!")
     else:
         for log in irr_hist:
-            # Fixed the f-string syntax error here by removing the brackets around the rain emoji
             with st.expander(f"📅 {log['log_date']}  |  {log['crop_type']}  |  🌧 {log['rainfall']}mm  |  🌡 {log['temperature']}°C  |  Soil: {log['soil_type']}"):
                 for line in log["recommendation"].split("\n"):
                     if line.strip():
@@ -1851,7 +1809,6 @@ elif nav == "🔔 Notifications":
 # ============================================================
 elif nav == "🤖 Agro Chatbot":
 
-    # ── Import new chatbot engine ──
     try:
         sys.path.insert(0, os.path.join(BASE_DIR, "chatbot"))
         from response_generator import generate_chatbot_response as _new_chatbot
@@ -1859,7 +1816,6 @@ elif nav == "🤖 Agro Chatbot":
     except Exception:
         USE_NEW_CHATBOT = False
 
-    # ── Format reply ──
     def _format_chatbot_reply(raw):
         if isinstance(raw, str):
             return raw
@@ -1876,7 +1832,6 @@ elif nav == "🤖 Agro Chatbot":
             return str(reply)
         return str(raw)
 
-    # ── Render bot text into HTML ──
     def _render_bot_text(text):
         lines = text.split("\n")
         html  = []
@@ -1903,7 +1858,6 @@ elif nav == "🤖 Agro Chatbot":
             html.append("</ul>")
         return "".join(html)
 
-    # ── Detect message type from content ──
     def _detect_type(text):
         t = text.lower()
         if any(w in t for w in ["symptom","identify","sign","leaf spot"]): return "symptoms"
@@ -1930,7 +1884,6 @@ elif nav == "🤖 Agro Chatbot":
         "response":   ("🌿", "#2D6A2D",  "#F1F8E9"),
     }
 
-    # ── Init chat history ──
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
         st.session_state.chat_history.append({
@@ -1939,7 +1892,6 @@ elif nav == "🤖 Agro Chatbot":
             "type": "greeting"
         })
 
-    # ── HEADER ──
     st.markdown(f"""
     <div style='background:#1B5E20; border-radius:20px; padding:20px 26px;
                 margin-bottom:20px; display:flex; align-items:center; gap:16px;
@@ -1966,7 +1918,6 @@ elif nav == "🤖 Agro Chatbot":
     </div>
     """, unsafe_allow_html=True)
 
-    # ── QUICK SUGGESTIONS ──
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
@@ -1998,7 +1949,6 @@ elif nav == "🤖 Agro Chatbot":
 
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
-    # ── CONVERSATION LABEL ──
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
@@ -2006,7 +1956,6 @@ elif nav == "🤖 Agro Chatbot":
     </div>
     """, unsafe_allow_html=True)
 
-    # ── CHAT MESSAGES ──
     for msg in st.session_state.chat_history:
         if msg["role"] == "user":
             st.markdown(f"""
@@ -2092,7 +2041,6 @@ elif nav == "🤖 Agro Chatbot":
 
     st.markdown("---")
 
-    # ── CAPABILITIES GRID ──
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;'>
