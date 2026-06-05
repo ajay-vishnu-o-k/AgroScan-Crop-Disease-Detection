@@ -12,6 +12,25 @@ import warnings
 warnings.filterwarnings("ignore")
 tf.get_logger().setLevel("ERROR")
 
+# ─── GLOBAL KERAS CROSS-VERSION COMPATIBILITY PATCH ──────────
+# This interceptor overrides the built-in layer instantiation space
+# to shield legacy environments from modern Keras 3 graph keys globally.
+import keras.layers
+if not hasattr(keras.layers, "_original_input_layer"):
+    keras.layers._original_input_layer = keras.layers.InputLayer
+
+class GlobalCompatInputLayer(keras.layers._original_input_layer):
+    def __init__(self, **kwargs):
+        if "batch_shape" in kwargs:
+            kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
+        kwargs.pop("optional", None)
+        super().__init__(**kwargs)
+
+# Overwrite references across all module lookup namespaces
+keras.layers.InputLayer = GlobalCompatInputLayer
+tf.keras.layers.InputLayer = GlobalCompatInputLayer
+tf.keras.utils.get_custom_objects()["InputLayer"] = GlobalCompatInputLayer
+
 # ─── CHATBOT ENGINE ─────────────────────────────────────────
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -584,9 +603,6 @@ def load_farmer_history():
 # ============================================================
 #   MODEL LOADER
 # ============================================================
-# ============================================================
-#    MODEL LOADER
-# ============================================================
 @st.cache_resource(show_spinner="Loading AI model…")
 def load_model(crop: str):
     path = MODEL_PATHS[crop]
@@ -594,23 +610,8 @@ def load_model(crop: str):
         st.error(f"Model file not found: {path}")
         return None
 
-    # Define compatibility classes for legacy Keras 2 environments
-    from keras.layers import InputLayer
-    class CompatInputLayer(InputLayer):
-        def __init__(self, **kwargs):
-            # Core Fix: Translate Keras 3 'batch_shape' into legacy Keras 2 'batch_input_shape'
-            if "batch_shape" in kwargs:
-                kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
-            kwargs.pop("optional", None)
-            super().__init__(**kwargs)
-
-    # 1. Gather all core Keras references available in this environment
-    # This allows us to map Keras 3 names smoothly back to Keras 2 components
-    custom_map = {
-        "InputLayer": CompatInputLayer,
-    }
-
-    # 2. Safely map missing Keras 3 structures back to active legacy equivalents
+    # Load dynamic functional objects mapping for cross-version model trees
+    custom_map = {}
     try:
         import keras.engine.functional as legacy_funct
         custom_map["Functional"] = legacy_funct.Functional
@@ -621,7 +622,7 @@ def load_model(crop: str):
         except ImportError:
             pass
 
-    # Try standard load first, passing our structural overrides
+    # Try standard load first (leveraging our globally monkey-patched structures)
     try:
         return tf.keras.models.load_model(path, compile=False, custom_objects=custom_map)
     except Exception:
@@ -645,8 +646,6 @@ def load_model(crop: str):
                     with open(config_path, "r") as cf:
                         raw_config = cf.read()
                     
-                    # Core fix: hot-patch incoming JSON strings to stop checking 
-                    # Keras 3 namespaces that break Keras 2 engines
                     patched_config = raw_config.replace("keras.src.models.functional", "keras.src.engine.functional")
                     config = json.loads(patched_config)
 
@@ -1373,7 +1372,7 @@ if nav == "🏠 Dashboard":
     col_w, col_h = st.columns([1.3, 1])
 
     with col_w:
-        st.markdown('<div class="section-head">🌤 Live Weather & Disease Alerts</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-head">Live Weather & Disease Alerts</div>', unsafe_allow_html=True)
         weather = get_weather(f["location"])
         if weather:
             w_icon = {"Rain":"🌧","Clouds":"☁️","Clear":"☀️","Thunderstorm":"⛈️","Drizzle":"🌦️","Mist":"🌫️"}.get(weather["icon"], "🌡️")
@@ -1394,17 +1393,17 @@ if nav == "🏠 Dashboard":
               </div>
             </div>
             """, unsafe_allow_html=True)
-            st.markdown("<b style='font-size:17px; color:#110A05; display:block; margin-bottom:6px;'>🔍 Weather-based Disease Risk:</b>", unsafe_allow_html=True)
+            st.markdown("<b style='font-size:17px; color:#110A05; display:block; margin-bottom:6px;'> Weather-based Disease Risk:</b>", unsafe_allow_html=True)
             risks = weather_disease_risk(weather, crop)
             for level, msg in risks:
                 cls  = {"high":"risk-high","med":"risk-med","low":"risk-low"}.get(level,"risk-low")
                 icon = {"high":"🔴","med":"🟡","low":"🟢"}.get(level,"🟢")
                 st.markdown(f'<div class="risk-badge {cls}">{icon} {msg}</div>', unsafe_allow_html=True)
         else:
-            st.info("🌤 Weather data unavailable. Please check your internet connection or city name.")
+            st.info(" Weather data unavailable. Please check your internet connection or city name.")
 
     with col_h:
-        st.markdown('<div class="section-head">📜 Recent Scans</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-head"> Recent Scans</div>', unsafe_allow_html=True)
         if scan_hist:
             for h in scan_hist[:5]:
                 color = "#C62828" if h["prediction_result"] != "Healthy" else "#2E7D32"
@@ -1417,7 +1416,7 @@ if nav == "🏠 Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("No scans yet. Go to 🔬 Disease Detection to start!")
+            st.info("No scans yet. Go to  Disease Detection to start!")
 
 
 # ============================================================
@@ -1469,15 +1468,14 @@ elif nav == "🔬 Disease Detection":
     col_up, col_res = st.columns([1, 1.3], gap="large")
 
     with col_up:
-        st.markdown("#### 📷 Upload Leaf Image")
+        st.markdown("####  Upload Leaf Image")
         uploaded   = st.file_uploader("Choose a leaf photo", type=["jpg","jpeg","png"])
         st.markdown("**— or take a photo —**")
         camera_img = st.camera_input("Open camera")
         st.markdown("---")
-        scan_btn = st.button("🔍 Detect Disease", use_container_width=True)
+        scan_btn = st.button(" Detect Disease", use_container_width=True)
 
     with col_res:
-        # Fixed source priority selection fallback context
         img_source = uploaded if uploaded else camera_img
         if img_source:
             img_pil = Image.open(img_source)
@@ -1540,31 +1538,31 @@ elif nav == "🔬 Disease Detection":
                             </div>
                             """, unsafe_allow_html=True)
                         else:
-                            t1, t2, t3 = st.tabs(["🦠 Causes", "💊 Treatment", "🛡 Prevention"])
+                            t1, t2, t3 = st.tabs([" Causes", " Treatment", " Prevention"])
                             with t1:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4>🦠 Root Causes of {label}</h4>
+                                  <h4> Root Causes of {label}</h4>
                                   <ul>{''.join(f"<li>{c}</li>" for c in info.get('causes',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
                             with t2:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4>💊 Treatment Plan</h4>
+                                  <h4> Treatment Plan</h4>
                                   <ul>{''.join(f"<li>{t}</li>" for t in info.get('treatment',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
                             with t3:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4>🛡 Prevention Tips</h4>
+                                  <h4> Prevention Tips</h4>
                                   <ul>{''.join(f"<li>{p}</li>" for p in info.get('prevention',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
 
-                        st.success("✅ Scan result saved to your history!")
+                        st.success(" Scan result saved to your history!")
 
 
 # ============================================================
 #   IRRIGATION ADVISOR
 # ============================================================
 elif nav == "🌧 Irrigation Advisor":
-    st.markdown(f'<div class="section-head">🌧 Automated Live Irrigation Advisor — {CROP_EMOJI.get(crop,"")} {crop}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-head"> Automated Live Irrigation Advisor — {CROP_EMOJI.get(crop,"")} {crop}</div>', unsafe_allow_html=True)
 
     weather = get_weather(f["location"])
     if weather:
@@ -1578,7 +1576,7 @@ elif nav == "🌧 Irrigation Advisor":
         st.markdown("""
         <div style='background:#0D47A1; border-radius:12px; padding:16px 20px; margin-bottom:22px; border:1.5px solid #1565C0'>
           <span style='font-size:17px; color:#ffffff; font-weight:600'>
-            ✅ Live Automation Active! Field metrics have been automatically synced using real-time local weather feeds for <b>{}</b>. No manual adjustments required.
+             Live Automation Active! Field metrics have been automatically synced using real-time local weather feeds for <b>{}</b>. No manual adjustments required.
           </span>
         </div>
         """.format(f['location']), unsafe_allow_html=True)
@@ -1586,30 +1584,30 @@ elif nav == "🌧 Irrigation Advisor":
         col_in, col_out = st.columns([1, 1.2], gap="large")
 
         with col_in:
-            st.markdown("#### ⚙️ Synced Field Environmental Metrics")
+            st.markdown("####  Synced Field Environmental Metrics")
             st.markdown("""
             <div style='background:#ffffff; border-radius:14px; padding:22px 24px; margin-bottom:16px;
                         border:1.5px solid #C8BFAF; box-shadow:0 4px 12px rgba(0,0,0,0.05)'>
               <div style='font-size:14px; color:#4A3A2A; text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px; font-weight:700;'>Real-time Metrics</div>
               <div style='display:flex; flex-direction:column; gap:14px'>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#4A3A2A; font-weight:600;'>📍 Location</span>
+                  <span style='font-size:16px; color:#4A3A2A; font-weight:600;'> Location</span>
                   <b style='font-size:17px; color:#110A05'>{}</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#1565C0; font-weight:600;'>🌧 Live Rainfall</span>
+                  <span style='font-size:16px; color:#1565C0; font-weight:600;'> Live Rainfall</span>
                   <b style='font-size:18px; color:#1565C0'>{} mm</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#E65100; font-weight:600;'>🌡️ Live Temperature</span>
+                  <span style='font-size:16px; color:#E65100; font-weight:600;'>️ Live Temperature</span>
                   <b style='font-size:18px; color:#E65100'>{}°C</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#5D4037; font-weight:600;'>🪨 Soil Context</span>
+                  <span style='font-size:16px; color:#5D4037; font-weight:600;'> Soil Context</span>
                   <b style='font-size:18px; color:#5D4037'>{} Context</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center;'>
-                  <span style='font-size:16px; color:#2E7D32; font-weight:600;'>🌱 Target Crop</span>
+                  <span style='font-size:16px; color:#2E7D32; font-weight:600;'> Target Crop</span>
                   <b style='font-size:18px; color:#2E7D32'>{}</b>
                 </div>
               </div>
@@ -1617,7 +1615,7 @@ elif nav == "🌧 Irrigation Advisor":
             """.format(f['location'], rainfall, temperature, soil_type, crop), unsafe_allow_html=True)
 
         with col_out:
-            st.markdown("#### 💧 Smart Irrigation Advisories")
+            st.markdown("####  Smart Irrigation Advisories")
             for rec in recs[:-1]:
                 st.markdown("""
                 <div class="irr-card">
@@ -1628,7 +1626,6 @@ elif nav == "🌧 Irrigation Advisor":
             final = recs[-1]
             final_bg = "#C62828" if "frequently" in final.lower() or "warning" in final.lower() else "#1B5E20"
             
-            # FIXED: Extracted nested custom design style components safely to bypass Python positional indexing parser issues
             st.markdown(f"""
             <div style="background:{final_bg}; border-radius:14px; padding:20px 22px; border:2px solid #4CAF50; margin-top:8px">
               <div style="font-family:Syne,sans-serif; font-size:17px; font-weight:800; color:#ffffff; margin-bottom:6px">
@@ -1654,7 +1651,7 @@ elif nav == "📋 Scan History":
     st.markdown('<div class="section-head">📋 Disease Scan History</div>', unsafe_allow_html=True)
     history = st.session_state.get("scan_history", [])
     if not history:
-        st.info("No disease scans yet. Go to 🔬 Disease Detection to start!")
+        st.info("No disease scans yet. Go to  Disease Detection to start!")
     else:
         import pandas as pd
         df = pd.DataFrame(history)
@@ -1946,7 +1943,7 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
-      💬 Quick Questions
+       Quick Questions
     </div>
     """, unsafe_allow_html=True)
 
@@ -1978,7 +1975,7 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
-      🗨️ Conversation
+       Conversation
     </div>
     """, unsafe_allow_html=True)
 
@@ -2031,7 +2028,6 @@ elif nav == "🤖 Agro Chatbot":
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-    # Clean input loop mechanics inside form component wrapper
     with st.form(key="chatbot_input_form", clear_on_submit=True):
         col_input, col_send = st.columns([5, 1])
         with col_input:
@@ -2063,7 +2059,7 @@ elif nav == "🤖 Agro Chatbot":
     col_clr, col_sp = st.columns([1, 4])
     with col_clr:
         if st.session_state.chat_history:
-            if st.button("🗑 Clear", key="clear_chat", use_container_width=True):
+            if st.button(" Clear", key="clear_chat", use_container_width=True):
                 st.session_state.chat_history = []
                 st.rerun()
 
