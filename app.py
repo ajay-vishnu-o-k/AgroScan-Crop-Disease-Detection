@@ -591,13 +591,44 @@ def load_model(crop: str):
         st.error(f"Model file not found: {path}")
         return None
     try:
-        return tf.keras.models.load_model(path)
-    except TypeError:
-        try:
-            return tf.keras.models.load_model(path, compile=False)
-        except Exception as e:
-            st.error(f"Model load error for {crop}: {str(e)}")
-            return None
+        return tf.keras.models.load_model(path, compile=False)
+    except Exception:
+        pass
+
+    # Fix for Keras version mismatch — patch InputLayer
+    try:
+        import keras
+        from keras.layers import InputLayer
+
+        class CompatInputLayer(InputLayer):
+            def __init__(self, **kwargs):
+                kwargs.pop("batch_shape", None)
+                kwargs.pop("optional", None)
+                super().__init__(**kwargs)
+
+        custom_objects = {"InputLayer": CompatInputLayer}
+        return tf.keras.models.load_model(
+            path,
+            compile=False,
+            custom_objects=custom_objects
+        )
+    except Exception:
+        pass
+
+    # Last resort — rebuild from config
+    try:
+        import h5py
+        with h5py.File(path, "r") as f:
+            model_config = f.attrs.get("model_config")
+            if model_config:
+                import json
+                config = json.loads(model_config)
+                model = tf.keras.models.model_from_json(
+                    json.dumps(config),
+                    custom_objects={}
+                )
+                model.load_weights(path)
+                return model
     except Exception as e:
         st.error(f"Model load error for {crop}: {str(e)}")
         return None
