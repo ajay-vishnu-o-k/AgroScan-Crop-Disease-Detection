@@ -76,7 +76,7 @@ html, body, [class*="css"], p, span, div, label {
     font-size: 15px;
 }
 
-/* General text size — only size, NOT color, to avoid overriding white-on-dark areas */
+/* General text size boost — only size, NOT color, to avoid overriding white-on-dark areas */
 p, li {
     font-size: 15px !important;
     line-height: 1.6 !important;
@@ -432,12 +432,23 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
 .stSlider > div > div > div > div { background: #4CAF50 !important; }
 
 /* ── Upload zone ── */
-[data-testid="stFileUploader"] {
-    border: 2px dashed #81C784 !important;
-    border-radius: 16px !important;
-    background: #F1F8E9 !important;
-    padding: 14px !important;
-}
+[data-testid="stFileUploader"] section {
+            background: #ffffff !important;
+            border: 2px dashed #2D6A2D !important;
+            border-radius: 16px !important;
+        }
+        [data-testid="stFileUploader"] section span,
+        [data-testid="stFileUploader"] section p,
+        [data-testid="stFileUploader"] section div,
+        [data-testid="stFileUploader"] section small,
+        [data-testid="stFileUploader"] section * {
+            color: #110A05 !important;
+            font-weight: 700 !important;
+            font-size: 16px !important;
+        }
+        [data-testid="stFileUploader"] section svg {
+            fill: #2D6A2D !important;
+        }
 
 /* ── Dataframe ── */
 .stDataFrame { border-radius: 12px !important; overflow: hidden; }
@@ -579,7 +590,59 @@ def load_model(crop: str):
     if not os.path.exists(path):
         st.error(f"Model file not found: {path}")
         return None
-    return tf.keras.models.load_model(path)
+
+    # Try standard load first
+    try:
+        return tf.keras.models.load_model(path, compile=False)
+    except Exception:
+        pass
+
+    # For .keras format — convert to h5 and reload
+    if path.endswith(".keras"):
+        try:
+            import zipfile
+            import tempfile
+            import json
+
+            # .keras is a zip file — extract and load weights manually
+            with tempfile.TemporaryDirectory() as tmpdir:
+                with zipfile.ZipFile(path, "r") as z:
+                    z.extractall(tmpdir)
+
+                config_path = os.path.join(tmpdir, "config.json")
+                weights_path = os.path.join(tmpdir, "model.weights.h5")
+
+                if os.path.exists(config_path):
+                    with open(config_path, "r") as cf:
+                        config = json.load(cf)
+                    model = tf.keras.models.model_from_json(
+                        json.dumps(config),
+                        custom_objects={}
+                    )
+                    if os.path.exists(weights_path):
+                        model.load_weights(weights_path)
+                    return model
+        except Exception:
+            pass
+
+    # For .h5 format — patch InputLayer
+    try:
+        from keras.layers import InputLayer
+
+        class CompatInputLayer(InputLayer):
+            def __init__(self, **kwargs):
+                kwargs.pop("batch_shape", None)
+                kwargs.pop("optional", None)
+                super().__init__(**kwargs)
+
+        return tf.keras.models.load_model(
+            path,
+            compile=False,
+            custom_objects={"InputLayer": CompatInputLayer}
+        )
+    except Exception as e:
+        st.error(f"Model load error for {crop}: {str(e)}")
+        return None
 
 def predict(model, img_pil, crop: str):
     img  = img_pil.convert("RGB").resize((224, 224))
@@ -1199,13 +1262,12 @@ if not st.session_state.farmer_data:
 
 if not st.session_state.farmer_data:
     st.rerun()
-    st.stop()
 
 f = st.session_state.get("farmer_data", None)
-if f is None or not isinstance(f, dict) or "main_crop" not in f:
-    st.session_state.farmer_data = None
+if f is None:
     st.warning("Session expired. Please login again.")
-    st.stop()
+    st.session_state.farmer_data = None
+    st.rerun()
 
 crop = f["main_crop"]
 
@@ -1377,19 +1439,6 @@ elif nav == "🔬 Disease Detection":
 
     crop = st.session_state.selected_crop
 
-    st.markdown(f"""
-    <div style='background:#1B5E20; border-radius:10px; padding:12px 18px;
-                margin:16px 0 22px; border:1.5px solid #81C784;
-                display:flex; align-items:center; gap:12px'>
-      <span style='font-size:24px'>{CROP_EMOJI.get(crop,'')}</span>
-      <span style='font-size:16px; color:#ffffff; font-weight:600'>
-        Active model: <b>{crop}</b>
-        &nbsp;·&nbsp; <code style='color:#A5D6A7'>{os.path.basename(MODEL_PATHS[crop])}</code>
-        &nbsp;·&nbsp; Classes: {' / '.join(CLASS_LABELS[crop])}
-      </span>
-    </div>
-    """, unsafe_allow_html=True)
-
     col_up, col_res = st.columns([1, 1.3], gap="large")
 
     with col_up:
@@ -1404,7 +1453,7 @@ elif nav == "🔬 Disease Detection":
         img_source = camera_img if camera_img else uploaded
         if img_source:
             img_pil = Image.open(img_source)
-            st.image(img_pil, caption="Leaf image", use_column_width=True)
+            st.image(img_pil, caption="Leaf image", width=600)
 
         if scan_btn:
             if not img_source:
@@ -1874,16 +1923,14 @@ elif nav == "🤖 Agro Chatbot":
     """, unsafe_allow_html=True)
 
     suggestions = [
-        ("🦠", "Rice disease treatment"),
-        ("💧", "Wheat irrigation"),
-        ("🍅", "Tomato late blight causes"),
-        ("🥔", "Potato fertilizer"),
-        ("🌾", "Rice harvest tips"),
-        ("🌤", "Wheat weather conditions"),
+        ("🌾", "Rice"),
+        ("🌿", "Wheat"),
+        ("🍅", "Tomato"),
+        ("🥔", "Potato"),
     ]
-    sug_cols = st.columns(3)
+    sug_cols = st.columns(4)
     for i, (icon, sug) in enumerate(suggestions):
-        with sug_cols[i % 3]:
+        with sug_cols[i]:
             if st.button(f"{icon} {sug}", key=f"sug_{i}", use_container_width=True):
                 st.session_state.chat_history.append({"role":"user","text":sug})
                 if USE_NEW_CHATBOT:
