@@ -18,6 +18,36 @@
     "created_at": "2026-05-27 09:12",
     "scan_history": [
       {
+        "crop_type": "Wheat",
+        "prediction_result": "Yellow Rust",
+        "confidence": 96.93456888198853,
+        "scan_date": "2026-06-05 10:11"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 96.28102779388428,
+        "scan_date": "2026-06-05 10:11"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 94.36809420585632,
+        "scan_date": "2026-06-05 09:47"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 98.82015585899353,
+        "scan_date": "2026-06-05 09:47"
+      },
+      {
+        "crop_type": "Rice",
+        "prediction_result": "Bacterial Leaf Blight",
+        "confidence": 99.99644756317139,
+        "scan_date": "2026-06-05 09:46"
+      },
+      {
         "crop_type": "Rice",
         "prediction_result": "Healthy",
         "confidence": 99.99997615814209,
@@ -189,6 +219,30 @@
     "irr_history": [
       {
         "crop_type": "Rice",
+        "rainfall": 0,
+        "temperature": 27.0,
+        "soil_type": "Loamy",
+        "recommendation": "\u2600\ufe0f Low rainfall detected \u2014 additional irrigation is necessary.\n\ud83c\udf21 Temperature is normal \u2014 good conditions for healthy crop growth.\n\ud83e\udea8 Loamy soil has balanced moisture \u2014 maintain regular irrigation schedule.\n\ud83c\udf3e Rice requires high water availability and performs well in flooded conditions.\n\u2705 FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture.",
+        "log_date": "2026-06-05 10:03"
+      },
+      {
+        "crop_type": "Rice",
+        "rainfall": 0,
+        "temperature": 27.0,
+        "soil_type": "Loamy",
+        "recommendation": "\u2600\ufe0f Low rainfall detected \u2014 additional irrigation is necessary.\n\ud83c\udf21 Temperature is normal \u2014 good conditions for healthy crop growth.\n\ud83e\udea8 Loamy soil has balanced moisture \u2014 maintain regular irrigation schedule.\n\ud83c\udf3e Rice requires high water availability and performs well in flooded conditions.\n\u2705 FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture.",
+        "log_date": "2026-06-05 10:03"
+      },
+      {
+        "crop_type": "Rice",
+        "rainfall": 0,
+        "temperature": 27.0,
+        "soil_type": "Loamy",
+        "recommendation": "\u2600\ufe0f Low rainfall detected \u2014 additional irrigation is necessary.\n\ud83c\udf21 Temperature is normal \u2014 good conditions for healthy crop growth.\n\ud83e\udea8 Loamy soil has balanced moisture \u2014 maintain regular irrigation schedule.\n\ud83c\udf3e Rice requires high water availability and performs well in flooded conditions.\n\u2705 FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture.",
+        "log_date": "2026-06-05 10:03"
+      },
+      {
+        "crop_type": "Rice",
         "rainfall": 35,
         "temperature": 38,
         "soil_type": "Black",
@@ -285,6 +339,38 @@
     "created_at": "2026-06-03 16:19",
     "irr_history": [
       {
+        "crop_type": "Rice",
+        "rainfall": 0,
+        "temperature": 21.1,
+        "soil_type": "Loamy",
+        "recommendation": "\u2600\ufe0f Low rainfall detected \u2014 additional irrigation is necessary.\n\ud83c\udf21 Low temperature reduces evaporation \u2014 reduce irrigation frequency.\n\ud83e\udea8 Loamy soil has balanced moisture \u2014 maintain regular irrigation schedule.\n\ud83c\udf3e Rice requires high water availability and performs well in flooded conditions.\n\u2705 FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture.",
+        "log_date": "2026-06-05 11:49"
+      },
+      {
+        "crop_type": "Rice",
+        "rainfall": 0,
+        "temperature": 20.9,
+        "soil_type": "Loamy",
+        "recommendation": "\u2600\ufe0f Low rainfall detected \u2014 additional irrigation is necessary.\n\ud83c\udf21 Low temperature reduces evaporation \u2014 reduce irrigation frequency.\n\ud83e\udea8 Loamy soil has balanced moisture \u2014 maintain regular irrigation schedule.\n\ud83c\udf3e Rice requires high water availability and performs well in flooded conditions.\n\u2705 FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture.",
+        "log_date": "2026-06-05 11:41"
+      },
+      {
+        "crop_type": "Rice",
+        "rainfall": 0,
+        "temperature": 21.5,
+        "soil_type": "Loamy",
+        "recommendation": "\u2600\ufe0f Low rainfall detected \u2014 additional irrigation is necessary.\n\ud83c\udf21 Low temperature reduces evaporation \u2014 reduce irrigation frequency.\n\ud83e\udea8 Loamy soil has balanced moisture \u2014 maintain regular irrigation schedule.\n\ud83c\udf3e Rice requires high water availability and performs well in flooded conditions.\n\u2705 FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture.",
+        "log_date": "2026-06-05 11:05"
+      },
+      {
+        "crop_type": "Rice",
+        "rainfall": 0,
+        "temperature": 20.8,
+        "soil_type": "Loamy",
+        "recommendation": "\u2600\ufe0f Low rainfall detected \u2014 additional irrigation is necessary.\n\ud83c\udf21 Low temperature reduces evaporation \u2014 reduce irrigation frequency.\n\ud83e\udea8 Loamy soil has balanced moisture \u2014 maintain regular irrigation schedule.\n\ud83c\udf3e Rice requires high water availability and performs well in flooded conditions.\n\u2705 FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture.",
+        "log_date": "2026-06-05 09:28"
+      },
+      {
         "crop_type": "Potato",
         "rainfall": 0.0,
         "temperature": 22.6,
@@ -315,6 +401,98 @@
         "soil_type": "Loamy",
         "recommendation": "\u2600\ufe0f Low rainfall detected \u2014 additional irrigation is necessary.\n\ud83c\udf21 Low temperature reduces evaporation \u2014 reduce irrigation frequency.\n\ud83e\udea8 Loamy soil has balanced moisture \u2014 maintain regular irrigation schedule.\n\ud83c\udf3f Wheat needs moderate irrigation during early growth stages.\n\u2705 FINAL DECISION: Irrigate every 3 days to maintain balanced soil moisture.",
         "log_date": "2026-06-04 09:18"
+      }
+    ],
+    "scan_history": [
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 98.82015585899353,
+        "scan_date": "2026-06-05 13:03"
+      },
+      {
+        "crop_type": "Potato",
+        "prediction_result": "Healthy",
+        "confidence": 98.31737875938416,
+        "scan_date": "2026-06-05 12:18"
+      },
+      {
+        "crop_type": "Tomato",
+        "prediction_result": "Early Blight",
+        "confidence": 68.5603380203247,
+        "scan_date": "2026-06-05 12:18"
+      },
+      {
+        "crop_type": "Rice",
+        "prediction_result": "Bacterial Leaf Blight",
+        "confidence": 99.95494484901428,
+        "scan_date": "2026-06-05 12:18"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Healthy",
+        "confidence": 98.82015585899353,
+        "scan_date": "2026-06-05 12:04"
+      },
+      {
+        "crop_type": "Potato",
+        "prediction_result": "Healthy",
+        "confidence": 100.0,
+        "scan_date": "2026-06-05 12:03"
+      },
+      {
+        "crop_type": "Tomato",
+        "prediction_result": "Early Blight",
+        "confidence": 86.10225915908813,
+        "scan_date": "2026-06-05 12:03"
+      },
+      {
+        "crop_type": "Rice",
+        "prediction_result": "Bacterial Leaf Blight",
+        "confidence": 99.99644756317139,
+        "scan_date": "2026-06-05 12:03"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Yellow Rust",
+        "confidence": 99.94950294494629,
+        "scan_date": "2026-06-05 11:49"
+      },
+      {
+        "crop_type": "Potato",
+        "prediction_result": "Healthy",
+        "confidence": 79.92269992828369,
+        "scan_date": "2026-06-05 11:48"
+      },
+      {
+        "crop_type": "Tomato",
+        "prediction_result": "Early Blight",
+        "confidence": 51.655155420303345,
+        "scan_date": "2026-06-05 11:48"
+      },
+      {
+        "crop_type": "Rice",
+        "prediction_result": "Bacterial Leaf Blight",
+        "confidence": 99.99885559082031,
+        "scan_date": "2026-06-05 11:48"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Yellow Rust",
+        "confidence": 99.98798370361328,
+        "scan_date": "2026-06-05 11:41"
+      },
+      {
+        "crop_type": "Wheat",
+        "prediction_result": "Yellow Rust",
+        "confidence": 99.64886903762817,
+        "scan_date": "2026-06-05 11:05"
+      },
+      {
+        "crop_type": "Rice",
+        "prediction_result": "Bacterial Leaf Blight",
+        "confidence": 99.9548852443695,
+        "scan_date": "2026-06-05 11:05"
       }
     ]
   },

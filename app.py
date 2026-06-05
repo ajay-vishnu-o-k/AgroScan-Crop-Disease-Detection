@@ -12,24 +12,61 @@ import warnings
 warnings.filterwarnings("ignore")
 tf.get_logger().setLevel("ERROR")
 
-# ─── GLOBAL KERAS CROSS-VERSION COMPATIBILITY PATCH ──────────
-# This interceptor overrides the built-in layer instantiation space
-# to shield legacy environments from modern Keras 3 graph keys globally.
-import keras.layers
-if not hasattr(keras.layers, "_original_input_layer"):
-    keras.layers._original_input_layer = keras.layers.InputLayer
+# ─── GLOBAL DEEP LEARNING MODEL CONFIGURATION INTERCEPTOR ───
+# This patches Keras's deserialization loop globally to safely strip modern
+# Keras 3 graph signatures before they hit the legacy Keras 2 constructor engines.
+import keras
 
-class GlobalCompatInputLayer(keras.layers._original_input_layer):
-    def __init__(self, **kwargs):
-        if "batch_shape" in kwargs:
-            kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
-        kwargs.pop("optional", None)
-        super().__init__(**kwargs)
+def sanitize_keras_config(d):
+    if isinstance(d, dict):
+        # 1. Sanitize input layer parameter dictionaries
+        if "config" in d and isinstance(d["config"], dict):
+            cfg = d["config"]
+            if "batch_shape" in cfg:
+                cfg["batch_input_shape"] = cfg.pop("batch_shape")
+            if "optional" in cfg:
+                cfg.pop("optional")
+        if "batch_shape" in d:
+            d["batch_input_shape"] = d.pop("batch_shape")
+        if "optional" in d:
+            d.pop("optional")
+            
+        # 2. Re-route functional model structural definitions smoothly
+        if d.get("module") == "keras.src.models.functional" or d.get("class_name") == "Functional":
+            d["class_name"] = "Functional"
+            try:
+                import keras.src.engine.functional
+                d["module"] = "keras.src.engine.functional"
+            except ImportError:
+                d["module"] = "keras.engine.functional"
+                
+        for k, v in list(d.items()):
+            sanitize_keras_config(v)
+    elif isinstance(d, list):
+        for item in d:
+            sanitize_keras_config(item)
 
-# Overwrite references across all module lookup namespaces
-keras.layers.InputLayer = GlobalCompatInputLayer
-tf.keras.layers.InputLayer = GlobalCompatInputLayer
-tf.keras.utils.get_custom_objects()["InputLayer"] = GlobalCompatInputLayer
+# Bind the sanitizer hook into all available Keras layer object deserialization routines
+if hasattr(keras.layers, "deserialize"):
+    original_layers_deserialize = keras.layers.deserialize
+    def patched_layers_deserialize(config, custom_objects=None):
+        sanitize_keras_config(config)
+        return original_layers_deserialize(config, custom_objects=custom_objects)
+    keras.layers.deserialize = patched_layers_deserialize
+    tf.keras.layers.deserialize = patched_layers_deserialize
+
+try:
+    from keras.src.saving import serialization_lib
+    original_deserialize_obj = serialization_lib.deserialize_keras_object
+    def patched_deserialize_obj(*args, **kwargs):
+        if args:
+            sanitize_keras_config(args[0])
+        if "config" in kwargs:
+            sanitize_keras_config(kwargs["config"])
+        return original_deserialize_obj(*args, **kwargs)
+    serialization_lib.deserialize_keras_object = patched_deserialize_obj
+except Exception:
+    pass
 
 # ─── CHATBOT ENGINE ─────────────────────────────────────────
 import sys
@@ -58,7 +95,7 @@ MODEL_PATHS = {
     "Rice":   os.path.join(BASE_DIR, "rice_model.h5"),
     "Tomato": os.path.join(BASE_DIR, "tomato_model.h5"),
     "Potato": os.path.join(BASE_DIR, "potato_model.h5"),
-    "Wheat":  os.path.join(BASE_DIR, "wheat_disease_finetuned_model.keras"),
+    "Wheat":  os.path.join(BASE_DIR, "wheat_disease_finetuned_model.h5"), # Updated to .h5
 }
 
 CLASS_LABELS = {
@@ -393,13 +430,6 @@ section[data-testid="stSidebar"] .stNumberInput > div > div > input {
     color: #110A05 !important;
     font-weight: 800 !important;
 }
-.stTabs [data-baseweb="tab"] p,
-.stTabs [data-baseweb="tab"] span,
-.stTabs [data-baseweb="tab"] div {
-    color: #110A05 !important;
-    font-weight: 800 !important;
-    font-size: 18px !important;
-}
 .stTabs [aria-selected="true"] {
     background: #2D6A2D !important;
     color: #ffffff !important;
@@ -610,7 +640,7 @@ def load_model(crop: str):
         st.error(f"Model file not found: {path}")
         return None
 
-    # Load dynamic functional objects mapping for cross-version model trees
+    # Gather clean dynamic functional dictionary objects mapping overrides
     custom_map = {}
     try:
         import keras.engine.functional as legacy_funct
@@ -622,13 +652,13 @@ def load_model(crop: str):
         except ImportError:
             pass
 
-    # Try standard load first (leveraging our globally monkey-patched structures)
+    # Try standard model load loop
     try:
         return tf.keras.models.load_model(path, compile=False, custom_objects=custom_map)
     except Exception:
         pass
 
-    # For .keras format — extract, update config JSON namespaces, and manual build
+    # For .keras format — unzip package stream and execute target JSON structural adjustments
     if path.endswith(".keras"):
         try:
             import zipfile
@@ -649,6 +679,9 @@ def load_model(crop: str):
                     patched_config = raw_config.replace("keras.src.models.functional", "keras.src.engine.functional")
                     config = json.loads(patched_config)
 
+                    # Strip cross-version metrics before compiling internal matrices
+                    sanitize_keras_config(config)
+
                     model = tf.keras.models.model_from_json(
                         json.dumps(config),
                         custom_objects=custom_map
@@ -659,7 +692,7 @@ def load_model(crop: str):
         except Exception:
             pass
 
-    # Fallback default reload strategy
+    # Fallback secondary layout recovery reload strategy
     try:
         return tf.keras.models.load_model(
             path,
@@ -1372,7 +1405,7 @@ if nav == "🏠 Dashboard":
     col_w, col_h = st.columns([1.3, 1])
 
     with col_w:
-        st.markdown('<div class="section-head">Live Weather & Disease Alerts</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-head">🌤 Live Weather & Disease Alerts</div>', unsafe_allow_html=True)
         weather = get_weather(f["location"])
         if weather:
             w_icon = {"Rain":"🌧","Clouds":"☁️","Clear":"☀️","Thunderstorm":"⛈️","Drizzle":"🌦️","Mist":"🌫️"}.get(weather["icon"], "🌡️")
@@ -1393,17 +1426,17 @@ if nav == "🏠 Dashboard":
               </div>
             </div>
             """, unsafe_allow_html=True)
-            st.markdown("<b style='font-size:17px; color:#110A05; display:block; margin-bottom:6px;'> Weather-based Disease Risk:</b>", unsafe_allow_html=True)
+            st.markdown("<b style='font-size:17px; color:#110A05; display:block; margin-bottom:6px;'>🔍 Weather-based Disease Risk:</b>", unsafe_allow_html=True)
             risks = weather_disease_risk(weather, crop)
             for level, msg in risks:
                 cls  = {"high":"risk-high","med":"risk-med","low":"risk-low"}.get(level,"risk-low")
                 icon = {"high":"🔴","med":"🟡","low":"🟢"}.get(level,"🟢")
                 st.markdown(f'<div class="risk-badge {cls}">{icon} {msg}</div>', unsafe_allow_html=True)
         else:
-            st.info(" Weather data unavailable. Please check your internet connection or city name.")
+            st.info("🌤 Weather data unavailable. Please check your internet connection or city name.")
 
     with col_h:
-        st.markdown('<div class="section-head"> Recent Scans</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-head">📜 Recent Scans</div>', unsafe_allow_html=True)
         if scan_hist:
             for h in scan_hist[:5]:
                 color = "#C62828" if h["prediction_result"] != "Healthy" else "#2E7D32"
@@ -1416,7 +1449,7 @@ if nav == "🏠 Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.info("No scans yet. Go to  Disease Detection to start!")
+            st.info("No scans yet. Go to 🔬 Disease Detection to start!")
 
 
 # ============================================================
@@ -1468,12 +1501,12 @@ elif nav == "🔬 Disease Detection":
     col_up, col_res = st.columns([1, 1.3], gap="large")
 
     with col_up:
-        st.markdown("####  Upload Leaf Image")
+        st.markdown("#### 📷 Upload Leaf Image")
         uploaded   = st.file_uploader("Choose a leaf photo", type=["jpg","jpeg","png"])
         st.markdown("**— or take a photo —**")
         camera_img = st.camera_input("Open camera")
         st.markdown("---")
-        scan_btn = st.button(" Detect Disease", use_container_width=True)
+        scan_btn = st.button("🔍 Detect Disease", use_container_width=True)
 
     with col_res:
         img_source = uploaded if uploaded else camera_img
@@ -1538,31 +1571,31 @@ elif nav == "🔬 Disease Detection":
                             </div>
                             """, unsafe_allow_html=True)
                         else:
-                            t1, t2, t3 = st.tabs([" Causes", " Treatment", " Prevention"])
+                            t1, t2, t3 = st.tabs(["🦠 Causes", "💊 Treatment", "🛡 Prevention"])
                             with t1:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4> Root Causes of {label}</h4>
+                                  <h4>🦠 Root Causes of {label}</h4>
                                   <ul>{''.join(f"<li>{c}</li>" for c in info.get('causes',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
                             with t2:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4> Treatment Plan</h4>
+                                  <h4>💊 Treatment Plan</h4>
                                   <ul>{''.join(f"<li>{t}</li>" for t in info.get('treatment',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
                             with t3:
                                 st.markdown(f"""<div class="info-box">
-                                  <h4> Prevention Tips</h4>
+                                  <h4>🛡 Prevention Tips</h4>
                                   <ul>{''.join(f"<li>{p}</li>" for p in info.get('prevention',[]))}</ul>
                                 </div>""", unsafe_allow_html=True)
 
-                        st.success(" Scan result saved to your history!")
+                        st.success("✅ Scan result saved to your history!")
 
 
 # ============================================================
 #   IRRIGATION ADVISOR
 # ============================================================
 elif nav == "🌧 Irrigation Advisor":
-    st.markdown(f'<div class="section-head"> Automated Live Irrigation Advisor — {CROP_EMOJI.get(crop,"")} {crop}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-head">🌧 Automated Live Irrigation Advisor — {CROP_EMOJI.get(crop,"")} {crop}</div>', unsafe_allow_html=True)
 
     weather = get_weather(f["location"])
     if weather:
@@ -1576,7 +1609,7 @@ elif nav == "🌧 Irrigation Advisor":
         st.markdown("""
         <div style='background:#0D47A1; border-radius:12px; padding:16px 20px; margin-bottom:22px; border:1.5px solid #1565C0'>
           <span style='font-size:17px; color:#ffffff; font-weight:600'>
-             Live Automation Active! Field metrics have been automatically synced using real-time local weather feeds for <b>{}</b>. No manual adjustments required.
+            ✅ Live Automation Active! Field metrics have been automatically synced using real-time local weather feeds for <b>{}</b>. No manual adjustments required.
           </span>
         </div>
         """.format(f['location']), unsafe_allow_html=True)
@@ -1584,30 +1617,30 @@ elif nav == "🌧 Irrigation Advisor":
         col_in, col_out = st.columns([1, 1.2], gap="large")
 
         with col_in:
-            st.markdown("####  Synced Field Environmental Metrics")
+            st.markdown("#### ⚙️ Synced Field Environmental Metrics")
             st.markdown("""
             <div style='background:#ffffff; border-radius:14px; padding:22px 24px; margin-bottom:16px;
                         border:1.5px solid #C8BFAF; box-shadow:0 4px 12px rgba(0,0,0,0.05)'>
               <div style='font-size:14px; color:#4A3A2A; text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px; font-weight:700;'>Real-time Metrics</div>
               <div style='display:flex; flex-direction:column; gap:14px'>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#4A3A2A; font-weight:600;'> Location</span>
+                  <span style='font-size:16px; color:#4A3A2A; font-weight:600;'>📍 Location</span>
                   <b style='font-size:17px; color:#110A05'>{}</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#1565C0; font-weight:600;'> Live Rainfall</span>
+                  <span style='font-size:16px; color:#1565C0; font-weight:600;'>🌧 Live Rainfall</span>
                   <b style='font-size:18px; color:#1565C0'>{} mm</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#E65100; font-weight:600;'>️ Live Temperature</span>
+                  <span style='font-size:16px; color:#E65100; font-weight:600;'>🌡️ Live Temperature</span>
                   <b style='font-size:18px; color:#E65100'>{}°C</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EDE8DF; padding-bottom:8px;'>
-                  <span style='font-size:16px; color:#5D4037; font-weight:600;'> Soil Context</span>
+                  <span style='font-size:16px; color:#5D4037; font-weight:600;'>🪨 Soil Context</span>
                   <b style='font-size:18px; color:#5D4037'>{} Context</b>
                 </div>
                 <div style='display:flex; justify-content:space-between; align-items:center;'>
-                  <span style='font-size:16px; color:#2E7D32; font-weight:600;'> Target Crop</span>
+                  <span style='font-size:16px; color:#2E7D32; font-weight:600;'>🌱 Target Crop</span>
                   <b style='font-size:18px; color:#2E7D32'>{}</b>
                 </div>
               </div>
@@ -1615,7 +1648,7 @@ elif nav == "🌧 Irrigation Advisor":
             """.format(f['location'], rainfall, temperature, soil_type, crop), unsafe_allow_html=True)
 
         with col_out:
-            st.markdown("####  Smart Irrigation Advisories")
+            st.markdown("#### 💧 Smart Irrigation Advisories")
             for rec in recs[:-1]:
                 st.markdown("""
                 <div class="irr-card">
@@ -1651,7 +1684,7 @@ elif nav == "📋 Scan History":
     st.markdown('<div class="section-head">📋 Disease Scan History</div>', unsafe_allow_html=True)
     history = st.session_state.get("scan_history", [])
     if not history:
-        st.info("No disease scans yet. Go to  Disease Detection to start!")
+        st.info("No disease scans yet. Go to 🔬 Disease Detection to start!")
     else:
         import pandas as pd
         df = pd.DataFrame(history)
@@ -1695,7 +1728,6 @@ elif nav == "👨‍🌾 My Profile":
     </div>
     """, unsafe_allow_html=True)
 
-
 # ============================================================
 #   NOTIFICATIONS PAGE
 # ============================================================
@@ -1725,6 +1757,7 @@ elif nav == "🔔 Notifications":
         good     = [n for n in notifications if n["type"] == "good"]
 
         w_icon = {"Rain":"🌧","Clouds":"☁️","Clear":"☀️","Thunderstorm":"⛈️","Drizzle":"🌦️","Mist":"🌫️"}.get(weather["icon"],"🌡️")
+        
         st.markdown(f"""
         <div class='weather-card' style='margin-bottom:24px'>
           <div class='wc-city'>📍 {weather['city']} · Updated at {datetime.now().strftime('%H:%M')}</div>
@@ -1814,9 +1847,9 @@ elif nav == "🔔 Notifications":
 
                 st.markdown("<div style='margin-bottom:10px'></div>", unsafe_allow_html=True)
 
-        st.markdown("---")
-        if st.button("🔄 Refresh Weather Alerts", use_container_width=True):
-            st.rerun()
+    st.markdown("---")
+    if st.button("🔄 Refresh Weather Alerts", use_container_width=True):
+        st.rerun()
 
 
 # ============================================================
@@ -1943,7 +1976,7 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
-       Quick Questions
+       💬 Quick Questions
     </div>
     """, unsafe_allow_html=True)
 
@@ -1975,7 +2008,7 @@ elif nav == "🤖 Agro Chatbot":
     st.markdown("""
     <div style='font-size:13px;font-weight:800;color:#4A3A2A;
                 text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;'>
-       Conversation
+       🗨️ Conversation
     </div>
     """, unsafe_allow_html=True)
 
@@ -2059,7 +2092,7 @@ elif nav == "🤖 Agro Chatbot":
     col_clr, col_sp = st.columns([1, 4])
     with col_clr:
         if st.session_state.chat_history:
-            if st.button(" Clear", key="clear_chat", use_container_width=True):
+            if st.button("🗑 Clear", key="clear_chat", use_container_width=True):
                 st.session_state.chat_history = []
                 st.rerun()
 
