@@ -590,14 +590,43 @@ def load_model(crop: str):
     if not os.path.exists(path):
         st.error(f"Model file not found: {path}")
         return None
+
+    # Try standard load first
     try:
         return tf.keras.models.load_model(path, compile=False)
     except Exception:
         pass
 
-    # Fix for Keras version mismatch — patch InputLayer
+    # For .keras format — convert to h5 and reload
+    if path.endswith(".keras"):
+        try:
+            import zipfile
+            import tempfile
+            import json
+
+            # .keras is a zip file — extract and load weights manually
+            with tempfile.TemporaryDirectory() as tmpdir:
+                with zipfile.ZipFile(path, "r") as z:
+                    z.extractall(tmpdir)
+
+                config_path = os.path.join(tmpdir, "config.json")
+                weights_path = os.path.join(tmpdir, "model.weights.h5")
+
+                if os.path.exists(config_path):
+                    with open(config_path, "r") as cf:
+                        config = json.load(cf)
+                    model = tf.keras.models.model_from_json(
+                        json.dumps(config),
+                        custom_objects={}
+                    )
+                    if os.path.exists(weights_path):
+                        model.load_weights(weights_path)
+                    return model
+        except Exception:
+            pass
+
+    # For .h5 format — patch InputLayer
     try:
-        import keras
         from keras.layers import InputLayer
 
         class CompatInputLayer(InputLayer):
@@ -606,29 +635,11 @@ def load_model(crop: str):
                 kwargs.pop("optional", None)
                 super().__init__(**kwargs)
 
-        custom_objects = {"InputLayer": CompatInputLayer}
         return tf.keras.models.load_model(
             path,
             compile=False,
-            custom_objects=custom_objects
+            custom_objects={"InputLayer": CompatInputLayer}
         )
-    except Exception:
-        pass
-
-    # Last resort — rebuild from config
-    try:
-        import h5py
-        with h5py.File(path, "r") as f:
-            model_config = f.attrs.get("model_config")
-            if model_config:
-                import json
-                config = json.loads(model_config)
-                model = tf.keras.models.model_from_json(
-                    json.dumps(config),
-                    custom_objects={}
-                )
-                model.load_weights(path)
-                return model
     except Exception as e:
         st.error(f"Model load error for {crop}: {str(e)}")
         return None
@@ -1252,7 +1263,12 @@ if not st.session_state.farmer_data:
 if not st.session_state.farmer_data:
     st.rerun()
 
-f    = st.session_state.farmer_data
+f = st.session_state.get("farmer_data", None)
+if f is None:
+    st.warning("Session expired. Please login again.")
+    st.session_state.farmer_data = None
+    st.rerun()
+
 crop = f["main_crop"]
 
 if "scan_history" not in st.session_state or "irr_history" not in st.session_state:
