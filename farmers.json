@@ -598,5 +598,14 @@
         "scan_date": "2026-06-05 15:37"
       }
     ]
+  },
+  "FRM-65C3A5": {
+    "farmer_id": "FRM-65C3A5",
+    "username": "Test FarmerAgroScanner",
+    "location": "Test VillageThrissur",
+    "farm_size": "2.5",
+    "main_crop": "Rice",
+    "password": "2e2b24f8ee40bb847fe85bb23336a39ef5948e6b49d897419ced68766b16967a",
+    "created_at": "2026-06-05 15:56"
   }
 }

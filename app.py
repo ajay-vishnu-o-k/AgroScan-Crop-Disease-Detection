@@ -685,14 +685,24 @@ def load_model(crop: str):
     except ImportError:
         pass
 
+    import sys, traceback
     try:
         return tf.keras.models.load_model(path, compile=False, custom_objects=custom_map)
-    except Exception:
+    except Exception as e_tf:
         try:
             import keras
             return keras.models.load_model(path, compile=False, custom_objects=custom_map)
-        except Exception as e:
-            st.error(f"Model load error for {crop}: {str(e)}")
+        except Exception as e_keras:
+            tf_trace = "".join(traceback.format_exception(type(e_tf), e_tf, e_tf.__traceback__))
+            keras_trace = traceback.format_exc()
+            st.error(f"Model load error for {crop}: {str(e_keras)}")
+            st.code(
+                f"Python Version: {sys.version}\n"
+                f"TensorFlow Version: {tf.__version__}\n"
+                f"Keras Module Version: {keras.__version__ if 'keras' in sys.modules else 'Not Loaded'}\n\n"
+                f"--- TensorFlow Load Traceback ---\n{tf_trace}\n\n"
+                f"--- Keras Load Traceback ---\n{keras_trace}"
+            )
             return None
 
 def predict(model, img_pil, crop: str):
