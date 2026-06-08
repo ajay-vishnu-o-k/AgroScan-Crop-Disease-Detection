@@ -100,9 +100,9 @@ st.set_page_config(
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 
 MODEL_PATHS = {
-    "Rice":   os.path.join(BASE_DIR, "rice_model.h5"),
-    "Tomato": os.path.join(BASE_DIR, "tomato_model.h5"),
-    "Potato": os.path.join(BASE_DIR, "potato_model.h5"),
+    "Rice":   os.path.join(BASE_DIR, "rice_saved_model"),
+    "Tomato": os.path.join(BASE_DIR, "tomato_saved_model"),
+    "Potato": os.path.join(BASE_DIR, "potato_saved_model"),
     "Wheat":  os.path.join(BASE_DIR, "wheat_saved_model"), # Points directly to SavedModel folder
 }
 
