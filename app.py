@@ -27,6 +27,8 @@ def sanitize_keras_config(d):
                 cfg.pop("data_format")
             if "dtype" in cfg and isinstance(cfg["dtype"], dict):
                 cfg["dtype"] = cfg["dtype"].get("config", {}).get("name", "float32")
+            if "quantization_config" in cfg:
+                cfg.pop("quantization_config")
 
         if "batch_shape" in d:
             d["batch_input_shape"] = d.pop("batch_shape")
@@ -36,6 +38,8 @@ def sanitize_keras_config(d):
             d.pop("data_format")
         if "dtype" in d and isinstance(d["dtype"], dict):
             d["dtype"] = d["dtype"].get("config", {}).get("name", "float32")
+        if "quantization_config" in d:
+            d.pop("quantization_config")
             
         if d.get("module") == "keras.src.models.functional" or d.get("class_name") == "Functional":
             d["class_name"] = "Functional"
