@@ -336,7 +336,6 @@ def smart_entity_extractor(user_text):
     text = clean_text(user_text)
 
     detected_crop = None
-
     detected_disease = None
 
     # =====================================================
@@ -359,7 +358,7 @@ def smart_entity_extractor(user_text):
         fuzzy_crop = fuzzy_match(
             text,
             VALID_CROPS,
-            threshold=70
+            threshold=75
         )
 
         if fuzzy_crop:
@@ -380,7 +379,7 @@ def smart_entity_extractor(user_text):
             break
 
     # =====================================================
-    # Smart Fuzzy Disease Match
+    # Safe Fuzzy Disease Match
     # =====================================================
 
     if not detected_disease:
@@ -388,117 +387,94 @@ def smart_entity_extractor(user_text):
         best_match = None
         best_score = 0
 
-        disease_choices = [
+        # ---------------------------------------------
+        # Ignore crop-only messages
+        # ---------------------------------------------
 
-            d.replace("_", " ")
-            for d in ALL_DISEASES
-        ]
+        if text not in VALID_CROPS:
 
-        # -------------------------------------------------
-        # Full Text Match
-        # -------------------------------------------------
+            for disease in ALL_DISEASES:
 
-        for disease_name in disease_choices:
-
-            score = fuzz.partial_ratio(
-                disease_name,
-                text
-            )
-
-            if score > best_score:
-
-                best_score = score
-                best_match = disease_name
-
-        # -------------------------------------------------
-        # Word-Level Match
-        # -------------------------------------------------
-
-        words = text.split()
-
-        for word in words:
-
-            for disease_name in disease_choices:
+                disease_text = disease.replace("_", " ")
 
                 score = fuzz.partial_ratio(
-                    word,
-                    disease_name
+                    disease_text,
+                    text
                 )
 
-                if score > best_score:
+                # Strong threshold
+                if score >= 85 and score > best_score:
 
                     best_score = score
-                    best_match = disease_name
+                    best_match = disease
 
-        # -------------------------------------------------
-        # Final Threshold
-        # -------------------------------------------------
+        if best_match:
 
-        if best_match and best_score >= 60:
-
-            detected_disease = best_match.replace(
-                " ",
-                "_"
-            )
+            detected_disease = best_match
 
     # =====================================================
-    # Ambiguous Disease Check
+    # Result Template
     # =====================================================
 
-    if detected_disease:
+    result = {
+
+        "crop": detected_crop,
+
+        "disease": detected_disease,
+
+        "valid": True,
+
+        "error": None,
+
+        "needs_crop_confirmation": False,
+
+        "possible_crops": []
+    }
+
+    # =====================================================
+    # Disease Without Crop
+    # =====================================================
+
+    if detected_disease and not detected_crop:
 
         possible_crops = DISEASE_TO_CROPS.get(
             detected_disease,
             []
         )
 
-        # Disease exists in multiple crops
+        # Multiple crops
 
         if len(possible_crops) > 1:
 
-            if not detected_crop:
+            result["needs_crop_confirmation"] = True
 
-                return {
+            result["possible_crops"] = possible_crops
 
-                    "crop": None,
+        # Single crop
 
-                    "disease": detected_disease,
+        elif len(possible_crops) == 1:
 
-                    "valid": True,
+            result["crop"] = possible_crops[0]
 
-                    "needs_crop_confirmation": True,
+    # =====================================================
+    # Validate Combination
+    # =====================================================
 
-                    "possible_crops": possible_crops
-                }
+    if result["crop"] and detected_disease:
 
-        # Crop + disease validation
+        crop = result["crop"]
 
-        if detected_crop:
+        if detected_disease not in DISEASE_DATABASE[crop]:
 
-            if (
+            result["valid"] = False
 
-                detected_disease
-                not in DISEASE_DATABASE[detected_crop]
+            result["error"] = (
 
-            ):
+                f"{detected_disease.replace('_', ' ').title()} "
+                f"is not found in {crop.title()} crop."
+            )
 
-                return {
-
-                    "crop": detected_crop,
-
-                    "disease": detected_disease,
-
-                    "valid": False,
-
-                    "error": (
-                        f"{detected_disease.replace('_', ' ').title()} "
-                        f"is not found in {detected_crop.title()}."
-                    ),
-
-                    "needs_crop_confirmation": False,
-
-                    "possible_crops": []
-                }
+    return result
 
     # =====================================================
     # Final Result

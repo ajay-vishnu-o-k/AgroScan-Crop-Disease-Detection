@@ -79,10 +79,17 @@ AGRICULTURE_KEYWORDS = [
 
     # Weather
     "weather",
+    "weather condition",
+    "weather conditions",
     "temperature",
     "humidity",
     "climate",
     "rain",
+    "rainfall",
+    "forecast",
+    "hot weather",
+    "cold weather",
+    "weather guidance",
 
     # Soil
     "soil",
@@ -119,14 +126,27 @@ AGRICULTURE_KEYWORDS = [
 # Greeting Keywords
 # =========================================================
 
-GREETING_KEYWORDS = [
+GREETING_WORDS = [
 
     "hello",
+    "helo",
+    "hellow",
+    "helloy",
     "hi",
+    "hii",
+    "hiii",
     "hey",
+    "heyy",
+    "heyyy",
+    "heyyh",
+    "heyu",
+    "hy",
+    "hola",
+    "hay",
+    "greetings",
     "good morning",
-    "good evening",
-    "good afternoon"
+    "good afternoon",
+    "good evening"
 ]
 
 
@@ -178,9 +198,33 @@ def is_greeting(text):
 
     text = clean_text(text)
 
-    for word in GREETING_KEYWORDS:
+    # -----------------------------------------------------
+    # Exact Greeting Match
+    # -----------------------------------------------------
 
-        if word in text:
+    for word in GREETING_WORDS:
+
+        if text == word:
+
+            return True
+
+    # -----------------------------------------------------
+    # Fuzzy Greeting Match
+    # -----------------------------------------------------
+
+    result = process.extractOne(
+
+        text,
+        GREETING_WORDS,
+        scorer=fuzz.ratio
+    )
+
+    if result:
+
+        matched_word, score, _ = result
+
+        if score >= 75:
+
             return True
 
     return False
@@ -244,27 +288,37 @@ def smart_agriculture_match(text):
 # =========================================================
 
 def is_agriculture_related(text):
-
+    
     text = clean_text(text)
 
     # -----------------------------------------------------
-    # Exact Match
+    # 1. Exact Match (fastest + most reliable)
     # -----------------------------------------------------
-
     for keyword in AGRICULTURE_KEYWORDS:
-
         if keyword in text:
-
             return True
 
     # -----------------------------------------------------
-    # Smart Fuzzy Match
+    # 2. Explicit high-priority phrases (CRITICAL FIX)
     # -----------------------------------------------------
+    HIGH_PRIORITY_PHRASES = [
+        "crop management",
+        "farm management",
+        "crop care",
+        "agriculture management",
+        "field management"
+    ]
 
+    for phrase in HIGH_PRIORITY_PHRASES:
+        if phrase in text:
+            return True
+
+    # -----------------------------------------------------
+    # 3. Smart Fuzzy Match
+    # -----------------------------------------------------
     fuzzy_match = smart_agriculture_match(text)
 
     if fuzzy_match:
-
         return True
 
     return False
@@ -395,6 +449,10 @@ if __name__ == "__main__":
     test_questions = [
 
         "Hello",
+        "helo",
+        "helloy",
+        "heyyh",
+        "heyu",
         "crop diseas",
         "croop diseas",
         "brwn rest",

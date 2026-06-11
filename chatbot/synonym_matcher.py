@@ -102,7 +102,7 @@ DISEASE_CROP_MAPPING = {
 
     "late_blight": ["potato", "tomato"],
 
-    "early_blight": ["tomato"]
+    "early_blight": ["potato","tomato"]
 }
 
 

@@ -151,7 +151,7 @@ def smart_phrase_correction(user_text):
         matched_phrase = best_match[0]
         score = best_match[1]
 
-        if score >= 85:
+        if score >= 95:
 
             return matched_phrase
 

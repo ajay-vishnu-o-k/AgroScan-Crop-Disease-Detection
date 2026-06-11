@@ -133,40 +133,63 @@ DISEASE_DATABASE = {
     # POTATO
     # =====================================================
 
-    "potato": {
+"potato": {
 
-        "healthy": {
+    "healthy": {
 
-            "description":
-            "Healthy potato plants have green leaves, strong stems, and properly developing tubers. Proper irrigation and soil drainage are essential for healthy potato growth.",
+        "description":
+        "Healthy potato plants have green leaves, strong stems, and properly developing tubers. Proper irrigation and soil drainage are essential for healthy potato growth.",
 
-            "prevention":
-            "Use certified seed tubers, maintain proper irrigation, ensure good soil drainage, and monitor plants regularly."
-        },
-
-        # -------------------------------------------------
-
-        "late_blight": {
-
-            "symptoms":
-            "Late blight causes dark brown or black water-soaked spots on potato leaves and stems. White fungal growth may appear on the underside of leaves during humid conditions. Tubers may also rot under severe infection.",
-
-            "causes":
-            "Late blight is caused by the pathogen Phytophthora infestans. Cool temperatures and high humidity promote rapid disease spread. Rain and wind help spread spores quickly.",
-
-            "treatment":
-            "Remove infected leaves and plants immediately. Apply fungicides such as chlorothalonil, mancozeb, or copper-based fungicides. Avoid overhead irrigation to reduce leaf moisture.",
-
-            "prevention":
-            "Use resistant potato varieties and certified seeds. Ensure proper spacing for airflow and avoid excessive irrigation during humid weather.",
-
-            "weather_conditions":
-            "Cool temperatures between 10°C and 20°C with high humidity strongly favor late blight development.",
-
-            "affected_parts":
-            "Leaves, stems, and potato tubers are commonly affected."
-        }
+        "prevention":
+        "Use certified seed tubers, maintain proper irrigation, ensure good soil drainage, and monitor plants regularly."
     },
+
+    # -------------------------------------------------
+
+    "late_blight": {
+
+        "symptoms":
+        "Late blight causes dark brown or black water-soaked spots on potato leaves and stems. White fungal growth may appear on the underside of leaves during humid conditions. Tubers may also rot under severe infection.",
+
+        "causes":
+        "Late blight is caused by the pathogen Phytophthora infestans. Cool temperatures and high humidity promote rapid disease spread. Rain and wind help spread spores quickly.",
+
+        "treatment":
+        "Remove infected leaves and plants immediately. Apply fungicides such as chlorothalonil, mancozeb, or copper-based fungicides. Avoid overhead irrigation to reduce leaf moisture.",
+
+        "prevention":
+        "Use resistant potato varieties and certified seeds. Ensure proper spacing for airflow and avoid excessive irrigation during humid weather.",
+
+        "weather_conditions":
+        "Cool temperatures between 10°C and 20°C with high humidity strongly favor late blight development.",
+
+        "affected_parts":
+        "Leaves, stems, and potato tubers are commonly affected."
+    },
+
+    # -------------------------------------------------
+
+    "early_blight": {
+
+        "symptoms":
+        "Early blight causes small dark brown spots with concentric rings on older potato leaves. Yellowing around the spots is common, and severely infected leaves may dry and fall off.",
+
+        "causes":
+        "Early blight is caused by the fungus Alternaria solani. Warm temperatures, high humidity, and poor plant health increase disease development.",
+
+        "treatment":
+        "Remove infected leaves and apply fungicides such as mancozeb or chlorothalonil. Maintain proper crop nutrition and avoid excessive moisture on leaves.",
+
+        "prevention":
+        "Practice crop rotation, use disease-free seeds, maintain field sanitation, and provide balanced fertilization to strengthen plant resistance.",
+
+        "weather_conditions":
+        "Warm temperatures between 24°C and 30°C with moderate humidity favor early blight infection.",
+
+        "affected_parts":
+        "Primarily affects older leaves, but stems and tubers can also become infected in severe cases."
+    }
+},
 
     # =====================================================
     # TOMATO
