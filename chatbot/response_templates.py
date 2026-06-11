@@ -43,6 +43,11 @@ def generate_greeting_response():
 
 def generate_disease_response(crop, disease, intent):
 
+    if not crop or not disease or crop not in DISEASE_DATABASE or disease not in DISEASE_DATABASE[crop]:
+        crop_name = crop.title() if crop else "Unknown"
+        disease_name = disease.replace('_', ' ').title() if disease else "Unknown"
+        return f"🌾 The crop {crop_name} does not typically suffer from {disease_name}."
+
     disease_info = DISEASE_DATABASE[crop][disease]
     disease_name = disease.replace("_", " ").title()
 
