@@ -113,7 +113,7 @@ CLASS_LABELS = {
     "Wheat":  ["Brown Rust", "Healthy", "Yellow Rust"],
 }
 
-CROP_EMOJI = {"Rice":"", "Tomato":"", "Potato":"", "Wheat":""}
+CROP_EMOJI = {"Rice":"🌾", "Tomato":"🍅", "Potato":"🥔", "Wheat":"🌾"}
 
 OWM_API_KEY = "4f81d79be632f9cbe6a92458c47efa2f"
 
@@ -1921,16 +1921,16 @@ elif nav == "Agro Chatbot":
         return "response"
 
     TYPE_META = {
-        "greeting":   ("", "#4CAF50",  "#E8F5E9"),
-        "symptoms":   ("", "#7B1FA2",  "#F3E5F5"),
-        "causes":     ("",  "#E65100",  "#FFF3E0"),
-        "treatment":  ("", "#1565C0",  "#E3F2FD"),
-        "prevention": ("",  "#2E7D32",  "#E8F5E9"),
-        "irrigation": ("", "#0277BD",  "#E1F5FE"),
-        "fertilizer": ("", "#5D4037",  "#EFEBE9"),
-        "weather":    ("",  "#00838F",  "#E0F7FA"),
-        "harvest":    ("", "#F57F17",  "#FFF8E1"),
-        "response":   ("", "#2D6A2D",  "#F1F8E9"),
+        "greeting":   ("👋", "#4CAF50",  "#E8F5E9"),
+        "symptoms":   ("🔍", "#7B1FA2",  "#F3E5F5"),
+        "causes":     ("⚠",  "#E65100",  "#FFF3E0"),
+        "treatment":  ("💊", "#1565C0",  "#E3F2FD"),
+        "prevention": ("🛡",  "#2E7D32",  "#E8F5E9"),
+        "irrigation": ("💧", "#0277BD",  "#E1F5FE"),
+        "fertilizer": ("🪱", "#5D4037",  "#EFEBE9"),
+        "weather":    ("🌦",  "#00838F",  "#E0F7FA"),
+        "harvest":    ("🧺", "#F57F17",  "#FFF8E1"),
+        "response":   ("🤖", "#2D6A2D",  "#F1F8E9"),
     }
 
     if "chat_history" not in st.session_state:
@@ -1945,11 +1945,7 @@ elif nav == "Agro Chatbot":
     <div style='background:#1B5E20; border-radius:20px; padding:20px 26px;
                 margin-bottom:20px; display:flex; align-items:center; gap:16px;
                 border:1.5px solid #4CAF50; box-shadow:0 4px 16px rgba(27,94,32,0.25);'>
-      <div style='width:52px;height:52px;border-radius:50%;
-                  background:rgba(255,255,255,0.15);
-                  display:flex;align-items:center;justify-content:center;font-size:26px;'>
-        
-      </div>
+      <div style='width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:26px;'>🌱</div>
       <div style='flex:1'>
         <div style='font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#ffffff;'>
           AgroScan Agricultural Assistant
@@ -1975,10 +1971,10 @@ elif nav == "Agro Chatbot":
     """, unsafe_allow_html=True)
 
     suggestions = [
-        ("", "Rice"),
-        ("", "Wheat"),
-        ("", "Tomato"),
-        ("", "Potato"),
+        ("🌾", "Rice"),
+        ("🌾", "Wheat"),
+        ("🍅", "Tomato"),
+        ("🥔", "Potato"),
     ]
     sug_cols = st.columns(4)
     for i, (icon, sug) in enumerate(suggestions):
@@ -2010,20 +2006,10 @@ elif nav == "Agro Chatbot":
             st.markdown(f"""
             <div style='display:flex;justify-content:flex-end;margin-bottom:16px;'>
               <div style='display:flex;align-items:flex-end;gap:8px;max-width:75%;'>
-                <div style='background:#1B5E20;color:#ffffff;
-                            border-radius:20px 20px 4px 20px;
-                            padding:12px 18px;font-size:15px;
-                            font-weight:500;line-height:1.6;
-                            box-shadow:0 2px 10px rgba(27,94,32,0.25);'>
+                <div style='background:#1B5E20;color:#ffffff;border-radius:20px 20px 4px 20px;padding:12px 18px;font-size:15px;font-weight:500;line-height:1.6;box-shadow:0 2px 10px rgba(27,94,32,0.25);'>
                   {msg['text']}
                 </div>
-                <div style='width:32px;height:32px;border-radius:50%;
-                            background:#2D6A2D;flex-shrink:0;
-                            display:flex;align-items:center;
-                            justify-content:center;font-size:14px;
-                            box-shadow:0 2px 6px rgba(0,0,0,0.15);'>
-                  
-                </div>
+                <div style='width:32px;height:32px;border-radius:50%;background:#2D6A2D;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.15);'>🧑</div>
               </div>
             </div>
             """, unsafe_allow_html=True)
@@ -2033,19 +2019,8 @@ elif nav == "Agro Chatbot":
             body = _render_bot_text(msg["text"])
             st.markdown(f"""
             <div style='display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;'>
-              <div style='width:36px;height:36px;border-radius:50%;
-                          background:{accent};flex-shrink:0;
-                          display:flex;align-items:center;
-                          justify-content:center;font-size:17px;
-                          box-shadow:0 2px 8px rgba(0,0,0,0.15);
-                          margin-top:2px;'>
-                {icon}
-              </div>
-              <div style='background:#ffffff;border-radius:4px 20px 20px 20px;
-                          padding:16px 20px;max-width:82%;
-                          border:1.5px solid #E8E2D8;
-                          border-left:4px solid {accent};
-                          box-shadow:0 2px 10px rgba(0,0,0,0.06);'>
+              <div style='width:36px;height:36px;border-radius:50%;background:{accent};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 8px rgba(0,0,0,0.15);margin-top:2px;'>{icon}</div>
+              <div style='background:#ffffff;border-radius:4px 20px 20px 20px;padding:16px 20px;max-width:82%;border:1.5px solid #E8E2D8;border-left:4px solid {accent};box-shadow:0 2px 10px rgba(0,0,0,0.06);'>
                 {body}
               </div>
             </div>
